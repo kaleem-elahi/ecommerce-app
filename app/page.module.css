@@ -1,0 +1,81 @@
+.layout {
+  min-height: 100vh;
+  background: #fafafa;
+}
+
+.content {
+  padding: 24px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.container {
+  width: 100%;
+}
+
+.pageHeader {
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  margin: 0 0 8px 0 !important;
+  font-size: 32px;
+  font-weight: 600;
+  color: #262626;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.resultCount {
+  font-size: 14px;
+  color: #8c8c8c;
+  font-weight: 400;
+}
+
+/* Tablet */
+@media (max-width: 992px) {
+  .content {
+    padding: 20px 16px;
+  }
+
+  .pageTitle {
+    font-size: 28px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px 12px;
+  }
+
+  .pageHeader {
+    margin-bottom: 16px;
+  }
+
+  .pageTitle {
+    font-size: 24px;
+    margin-bottom: 6px !important;
+  }
+
+  .resultCount {
+    font-size: 13px;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .content {
+    padding: 12px 8px;
+  }
+
+  .pageTitle {
+    font-size: 20px;
+  }
+
+  .resultCount {
+    font-size: 12px;
+  }
+}
+

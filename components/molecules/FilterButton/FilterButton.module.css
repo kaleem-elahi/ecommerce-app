@@ -1,0 +1,42 @@
+.filterButton {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  margin: 0 !important;
+}
+
+.filterButton:hover {
+  border-color: #f16521 !important;
+  color: #f16521 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.filterButton:active {
+  transform: translateY(0);
+}
+
+.active {
+  font-weight: 600;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .filterButton {
+    font-size: 13px !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+  }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+  .filterButton {
+    font-size: 12px !important;
+    padding: 5px 12px !important;
+    border-radius: 18px !important;
+  }
+}
+

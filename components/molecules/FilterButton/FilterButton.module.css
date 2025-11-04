@@ -8,10 +8,10 @@
 }
 
 .filterButton:hover {
-  border-color: #f16521 !important;
-  color: #f16521 !important;
+  border-color: #8F61DB !important;
+  color: #8F61DB !important;
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 4px rgba(143, 97, 219, 0.2);
 }
 
 .filterButton:active {

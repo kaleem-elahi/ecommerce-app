@@ -21,11 +21,11 @@ export const FilterButton: React.FC<FilterButtonProps> = ({
             onClick={onClick}
             style={{
                 cursor: 'pointer',
-                padding: '4px 16px',
+                padding: '4px 12px',
                 borderRadius: '16px',
-                border: active ? '1px solid #f16521' : '1px solid #d9d9d9',
-                backgroundColor: active ? '#fff4e6' : '#ffffff',
-                color: active ? '#f16521' : '#595959',
+                border: active ? '1px solid #8F61DB' : '1px solid #d9d9d9',
+                backgroundColor: active ? '#EDBBCE' : '#ffffff',
+                color: active ? '#502688' : '#595959',
                 fontSize: '14px',
                 transition: 'all 0.2s',
             }}

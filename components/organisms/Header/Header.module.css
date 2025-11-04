@@ -12,12 +12,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 24px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   gap: 20px;
-  min-height: 68px;
+  min-height: 56px;
 }
 
 .headerLeft {
@@ -50,30 +50,38 @@
 }
 
 .logo {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
-  letter-spacing: -0.3px;
+  letter-spacing: 0.3px;
   display: flex;
   align-items: baseline;
-  line-height: 1;
+  line-height: 1.2;
   user-select: none;
+  font-family:  Palatino, Georgia, 'Times New Roman', serif;
+  color: #502688;
+  transition: all 0.2s ease;
 }
 
-.logoFirst {
-  color: #ff8c52;
-  font-weight: 600;
+.logo:hover {
+  opacity: 0.85;
 }
 
-.logoSecond {
-  color: #f16521;
-  font-weight: 800;
+.logoYemeni {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  opacity: 0.6;
+}
+
+.logoAgate {
+  font-weight: 700;
+  letter-spacing: 0.4px;
 }
 
 .categoriesButton {
   cursor: pointer;
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
@@ -81,15 +89,18 @@
   gap: 6px;
   font-size: 14px;
   font-weight: 500;
-  color: #595959;
+  color: #262626;
   white-space: nowrap;
   border: 1px solid transparent;
 }
 
 .categoriesButton:hover {
-  background-color: #fafafa;
-  color: #f16521;
-  border-color: #f0f0f0;
+  background-color: #EDBBCE;
+  color: #502688;
+}
+
+.categoriesButton :global(.anticon) {
+  font-size: 16px;
 }
 
 .categoriesText {
@@ -119,9 +130,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #595959;
+  color: #262626;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 6px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 500;
@@ -129,8 +140,8 @@
 }
 
 .headerLink:hover {
-  color: #f16521;
-  background-color: #fff4e6;
+  color: #502688;
+  background-color: #EDBBCE;
 }
 
 .headerLinkText {
@@ -138,11 +149,11 @@
 }
 
 .headerIcon {
-  font-size: 22px;
-  color: #595959;
+  font-size: 20px;
+  color: #262626;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  padding: 8px;
+  padding: 6px;
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -150,8 +161,8 @@
 }
 
 .headerIcon:hover {
-  color: #f16521;
-  background-color: #fff4e6;
+  color: #8F61DB;
+  background-color: #EDBBCE;
 }
 
 .flag {
@@ -161,13 +172,13 @@
 
 .secondaryNav {
   border-top: 1px solid #f0f0f0;
-  padding: 14px 24px;
+  padding: 8px 24px;
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  background: #fafafa;
+  background: #ffffff;
 }
 
 .secondaryNav::-webkit-scrollbar {
@@ -180,15 +191,31 @@
   font-weight: 500;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   white-space: nowrap;
 }
 
 .navLink:hover {
-  color: #f16521;
-  background-color: #ffffff;
+  color: #502688;
+  background-color: #EDBBCE;
+}
+
+.navLinkActive {
+  background-color: #EDBBCE;
+  color: #502688;
+  font-weight: 600;
+}
+
+.navLinkActive:hover {
+  background-color: #FC90AF;
+}
+
+.navIcon {
+  font-size: 14px;
 }
 
 .mobileDrawer :global(.ant-drawer-body) {
@@ -233,7 +260,7 @@
   }
 
   .logo {
-    font-size: 22px;
+    font-size: 24px;
   }
 
   .categoriesText {
@@ -267,7 +294,7 @@
   }
 
   .logo {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .categoriesButton {
@@ -320,7 +347,7 @@
   }
 
   .logo {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .headerActions {

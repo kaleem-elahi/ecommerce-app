@@ -1,13 +1,18 @@
 import { ConfigProvider } from 'antd'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
 import { Providers } from './providers'
 
 const inter = Inter({ subsets: ['latin'] })
+const playfairDisplay = Playfair_Display({
+    subsets: ['latin'],
+    weight: ['700'],
+    variable: '--font-playfair',
+})
 
 export const metadata: Metadata = {
-    title: 'Yemeni agate',
+    title: 'the agate city',
     description: 'Authentic Yemeni agate jewelry and gemstones - Handcrafted rings, stones, and Islamic jewelry with fast shipping',
 }
 
@@ -18,12 +23,12 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en">
-            <body className={inter.className}>
+            <body className={`${inter.className} ${playfairDisplay.variable}`}>
                 <Providers>
                     <ConfigProvider
                         theme={{
                             token: {
-                                colorPrimary: '#f16521',
+                                colorPrimary: '#8F61DB',
                                 borderRadius: 8,
                                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
                             },

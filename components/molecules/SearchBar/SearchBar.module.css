@@ -1,25 +1,96 @@
 .searchContainer {
   width: 100%;
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
-.searchInput {
+.searchWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: #ffffff;
   border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e8e8e8;
+  border: 1px solid #262626;
+  overflow: hidden;
   transition: all 0.3s;
+}
+
+.searchWrapper:focus-within {
+  border-color: #8F61DB;
+  box-shadow: 0 0 0 1px #8F61DB;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .searchInput:focus,
 .searchInput:hover {
-  border-color: #f16521;
-  box-shadow: 0 2px 12px rgba(241, 101, 33, 0.15);
+  border: none;
+  box-shadow: none;
 }
 
 .searchInput :global(.ant-input) {
+  border: none;
+  box-shadow: none;
   font-size: 15px;
   padding: 8px 16px;
+}
+
+.searchInput :global(.ant-input):focus {
+  border: none;
+  box-shadow: none;
+}
+
+.searchButton {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  margin: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #8F61DB;
+  border: none;
+}
+
+.searchButton:hover {
+  background-color: #502688 !important;
+}
+
+.searchButton :global(.ant-btn) {
+  border: none;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  font-weight: 500;
+  padding: 0;
+  background-color: #8F61DB;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.searchButton :global(.ant-btn:hover) {
+  background-color: #502688;
+  border-color: transparent;
+}
+
+.searchButton :global(.ant-btn) > span:not(.anticon) {
+  display: none;
+}
+
+.searchButton :global(.anticon) {
+  margin: 0;
+  font-size: 18px;
+  color: #ffffff;
 }
 
 .clearButton {
@@ -42,29 +113,61 @@
     max-width: 100%;
   }
 
-  .searchInput {
-    border-radius: 20px;
+  .searchWrapper {
+    border-radius: 24px;
   }
 
   .searchInput :global(.ant-input) {
     font-size: 14px;
-    padding: 6px 14px;
+    padding: 8px 16px;
   }
 
-  .searchInput :global(.ant-input-prefix) {
-    margin-right: 8px;
+  .searchButton {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    margin: 2px;
+  }
+
+  .searchButton :global(.ant-btn) {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 50%;
+  }
+
+  .searchButton :global(.ant-btn) span:not(:global(.anticon)) {
+    display: none;
+  }
+
+  .searchButton :global(.anticon) {
+    margin: 0;
   }
 }
 
 /* Small Mobile */
 @media (max-width: 480px) {
-  .searchInput {
-    border-radius: 18px;
+  .searchWrapper {
+    border-radius: 24px;
   }
 
   .searchInput :global(.ant-input) {
-    font-size: 13px;
-    padding: 5px 12px;
+    font-size: 14px;
+    padding: 8px 14px;
+  }
+
+  .searchButton {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    margin: 2px;
+  }
+
+  .searchButton :global(.ant-btn) {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 50%;
   }
 }
 

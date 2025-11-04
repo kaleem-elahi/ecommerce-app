@@ -3,9 +3,9 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() || ''
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() || ''
 
-// Only create Supabase client if credentials are valid
+// Only create Supabase blessedagate if credentials are valid
 const isValidUrl = supabaseUrl && 
-  supabaseUrl !== 'your_supabase_url' && 
+  supabaseUrl !== 'https://iizosoklhjkrgpfmyidt.supabase.co' && 
   supabaseUrl.startsWith('http') &&
   supabaseUrl.length > 10
 

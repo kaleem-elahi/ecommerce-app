@@ -59,8 +59,8 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
                         <MenuOutlined />
                     </button>
                     <div className={styles.logo}>
-                        <span className={styles.logoFirst}>Yemeni</span>
-                        <span className={styles.logoSecond}> agate</span>
+                        <span className={styles.logoYemeni}>Yemeni</span>{' '}
+                        <span className={styles.logoAgate}>Agate</span>
                     </div>
                     <Dropdown menu={{ items: categoryItems }} placement="bottomLeft">
                         <span className={styles.categoriesButton}>
@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
                 <div className={styles.headerRight}>
                     <Space size="large" className={styles.headerActions}>
                         <span className={styles.headerLink}>
-                            <UserOutlined /> <span className={styles.headerLinkText}>Sign in</span>
+                            <span className={styles.headerLinkText}>Sign in</span>
                         </span>
                         <span className={styles.headerLink}>
                             <GlobalOutlined /> <span className={styles.flag}>🇮🇳</span>
@@ -99,7 +99,8 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
             {/* Secondary Navigation */}
             <div className={styles.secondaryNav}>
                 <Space size="large" wrap>
-                    <a href="#" className={styles.navLink}>
+                    <a href="#" className={`${styles.navLink} ${styles.navLinkActive}`}>
+                        <GiftOutlined className={styles.navIcon} />
                         Gifts
                     </a>
                     <a href="#" className={styles.navLink}>

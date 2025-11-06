@@ -56,10 +56,8 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 // Edit mode: populate form with existing product data
                 // Process images first
                 let productImages: string[] = []
-                if (Array.isArray(product.images)) {
+                if (product.images && Array.isArray(product.images)) {
                     productImages = product.images.filter((img: any) => img && typeof img === 'string' && img.trim().length > 0)
-                } else if (typeof product.images === 'string' && product.images.trim().length > 0) {
-                    productImages = [product.images]
                 }
                 
                 console.log('Setting form fields including images:', productImages)

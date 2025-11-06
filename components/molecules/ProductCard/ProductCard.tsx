@@ -2,9 +2,10 @@
 
 import { Rating } from '@/components/atoms/Rating'
 import { Product } from '@/lib/supabase'
+import { HeartFilled, HeartOutlined } from '@ant-design/icons'
 import { Card, Space, Typography } from 'antd'
 import Image from 'next/image'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import styles from './ProductCard.module.css'
 
 const { Text, Title } = Typography
@@ -18,6 +19,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     product,
     onClick,
 }) => {
+    const [currentImageIndex, setCurrentImageIndex] = useState(0)
+    const [isWishlisted, setIsWishlisted] = useState(false)
+    const [isHovered, setIsHovered] = useState(false)
+
+    const images = product.images && product.images.length > 0
+        ? product.images
+        : ['https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400']
+
+    const hasMultipleImages = images.length > 1
+
     const discountPercentage =
         product.originalPrice && product.price
             ? Math.round(
@@ -26,14 +37,62 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )
             : null
 
+    // Auto-slide images when hovered
+    useEffect(() => {
+        if (!hasMultipleImages || !isHovered) return
+
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prev) => (prev + 1) % images.length)
+        }, 1500) // Change image every 1.5 seconds
+
+        return () => clearInterval(interval)
+    }, [hasMultipleImages, images.length, isHovered])
+
+    const handleWishlistClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setIsWishlisted(!isWishlisted)
+    }
+
+    const handleDotClick = (e: React.MouseEvent, index: number) => {
+        e.stopPropagation()
+        setCurrentImageIndex(index)
+    }
+
     return (
         <Card
             hoverable
             className={styles.productCard}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => {
+                setIsHovered(false)
+                setCurrentImageIndex(0)
+            }}
             cover={
                 <div className={styles.imageContainer}>
+                    {/* Carousel Dots */}
+                    {hasMultipleImages && (
+                        <div className={styles.carouselDots}>
+                            {images.map((_, index) => (
+                                <span
+                                    key={index}
+                                    className={`${styles.dot} ${index === currentImageIndex ? styles.activeDot : ''}`}
+                                    onClick={(e) => handleDotClick(e, index)}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Wishlist Icon */}
+                    <div className={styles.wishlistIcon} onClick={handleWishlistClick}>
+                        {isWishlisted ? (
+                            <HeartFilled style={{ color: '#ff4d4f', fontSize: 20 }} />
+                        ) : (
+                            <HeartOutlined style={{ fontSize: 20 }} />
+                        )}
+                    </div>
+
                     <Image
-                        src={product.imageUrl}
+                        src={images[currentImageIndex]}
                         alt={product.name}
                         width={300}
                         height={300}

@@ -27,6 +27,7 @@ export interface Product {
   subcategory?: string
   description?: string
   price: number
+  originalPrice?: number
   currency?: string
   stock?: number
   weightGrams?: number
@@ -45,6 +46,9 @@ export interface Product {
   images?: string[]
   featured?: boolean
   status?: string
+  rating?: number
+  reviewCount?: number
+  freeDelivery?: boolean
   metadata?: Record<string, any>
   createdAt?: string
   updatedAt?: string

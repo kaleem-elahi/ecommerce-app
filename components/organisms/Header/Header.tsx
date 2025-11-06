@@ -59,8 +59,9 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
                         <MenuOutlined />
                     </button>
                     <div className={styles.logo}>
-                        <span className={styles.logoYemeni}>Yemeni</span>{' '}
-                        <span className={styles.logoAgate}>Agate</span>
+                        <span className={styles.logoThe}>the</span>{' '}
+                        <span className={styles.logoAkik}>Agate</span>{' '}
+                        <span className={styles.logoCity}>city</span>
                     </div>
                     <Dropdown menu={{ items: categoryItems }} placement="bottomLeft">
                         <span className={styles.categoriesButton}>

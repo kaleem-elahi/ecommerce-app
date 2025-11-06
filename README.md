@@ -1,4 +1,4 @@
-# Yemeni agate
+# the akik city
 
 A modern, high-performance e-commerce application for authentic Yemeni agate jewelry and gemstones, built with Next.js 14, Ant Design, and Supabase, following Atomic Design principles.
 

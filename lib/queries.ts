@@ -127,7 +127,7 @@ function getMockProducts(searchTerm: string, filters: ProductFilters, sortBy: st
       name: 'Oval Red Aqeeq Men Ring, Silver Handmade Jew...',
       description: 'Silver handmade jewelry for men',
       price: 11063,
-      imageUrl: 'https://images.unsplash.com/photo-1596944924616-7b38e7cf8f77?w=400',
+      imageUrl: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400',
       rating: 4.9,
       reviewCount: 723,
       freeDelivery: true,

@@ -1,0 +1,20 @@
+.dashboard {
+  width: 100%;
+}
+
+.statsRow {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.welcomeCard {
+  margin-top: 24px;
+}
+
+.welcomeCard p {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+}
+

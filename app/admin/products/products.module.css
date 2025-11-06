@@ -1,0 +1,10 @@
+.productsPage {
+  width: 100%;
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+

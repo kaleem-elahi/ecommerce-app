@@ -2,6 +2,7 @@
 
 import { Button, Form, Input, InputNumber, Modal, Select, Switch, message } from 'antd'
 import { useEffect, useState } from 'react'
+import { ImageUpload } from './ImageUpload'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -44,27 +45,28 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
     const [form] = Form.useForm()
     const [loading, setLoading] = useState(false)
     const [tagsInput, setTagsInput] = useState('')
-    const [imagesInput, setImagesInput] = useState('')
     const [materialsInput, setMaterialsInput] = useState('')
+    const [images, setImages] = useState<string[]>([])
 
     useEffect(() => {
         if (open) {
             form.resetFields()
             setTagsInput('')
-            setImagesInput('')
             setMaterialsInput('')
+            setImages([])
         }
     }, [open, form])
 
     const handleSubmit = async (values: ProductFormValues) => {
         setLoading(true)
         try {
-            // Parse tags, materials, and images from comma-separated strings
+            // Parse tags and materials from comma-separated strings
+            // Images are handled by ImageUpload component
             const formData = {
                 ...values,
                 tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [],
                 materials: materialsInput ? materialsInput.split(',').map(m => m.trim()).filter(m => m) : [],
-                images: imagesInput ? imagesInput.split(',').map(i => i.trim()).filter(i => i) : [],
+                images: images.length > 0 ? images : [],
             }
 
             const response = await fetch('/api/admin/products', {
@@ -96,8 +98,8 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
     const handleCancel = () => {
         form.resetFields()
         setTagsInput('')
-        setImagesInput('')
         setMaterialsInput('')
+        setImages([])
         onCancel()
     }
 
@@ -367,16 +369,28 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                 {/* Images */}
                 <div style={{ marginBottom: 16 }}>
                     <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Images</h3>
-
+                    
                     <Form.Item
-                        label="Image URLs (comma-separated)"
-                        tooltip="Enter multiple image URLs separated by commas"
+                        name="images"
+                        label="Product Images"
+                        tooltip="Drag & drop images, paste from clipboard, or add URLs. Maximum 10 images."
+                        rules={[
+                            {
+                                validator: () => {
+                                    if (images.length === 0) {
+                                        return Promise.reject('Please add at least one image')
+                                    }
+                                    return Promise.resolve()
+                                }
+                            }
+                        ]}
                     >
-                        <TextArea
-                            value={imagesInput}
-                            onChange={(e) => setImagesInput(e.target.value)}
-                            rows={3}
-                            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
+                        <ImageUpload
+                            value={images}
+                            onChange={(urls) => {
+                                setImages(urls)
+                                form.setFieldsValue({ images: urls })
+                            }}
                         />
                     </Form.Item>
                 </div>

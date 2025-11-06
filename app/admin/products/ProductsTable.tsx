@@ -1,8 +1,8 @@
 'use client'
 
 import { Product } from '@/lib/supabase'
-import { PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Image, Table, Tag, Typography } from 'antd'
+import { EditOutlined, PlusOutlined } from '@ant-design/icons'
+import { Button, Card, Image, Popconfirm, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import { AddProductModal } from './AddProductModal'
@@ -18,9 +18,20 @@ interface ProductsTableProps {
 
 export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
     const [modalOpen, setModalOpen] = useState(false)
+    const [editProduct, setEditProduct] = useState<Product | null>(null)
     const [imageModalOpen, setImageModalOpen] = useState(false)
     const [selectedProductImages, setSelectedProductImages] = useState<string[]>([])
     const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+
+    const handleEdit = (product: Product) => {
+        setEditProduct(product)
+        setModalOpen(true)
+    }
+
+    const handleAdd = () => {
+        setEditProduct(null)
+        setModalOpen(true)
+    }
 
     const columns: ColumnsType<Product> = [
         {
@@ -220,6 +231,22 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                 </div>
             ),
         },
+        {
+            title: 'Actions',
+            key: 'actions',
+            width: 100,
+            fixed: 'right',
+            render: (_: any, record: Product) => (
+                <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={() => handleEdit(record)}
+                    size="small"
+                >
+                    Edit
+                </Button>
+            ),
+        },
     ]
 
     const handleSuccess = () => {
@@ -238,7 +265,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                 <Button
                     type="primary"
                     icon={<PlusOutlined />}
-                    onClick={() => setModalOpen(true)}
+                    onClick={handleAdd}
                     size="large"
                 >
                     Add Product
@@ -259,7 +286,11 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
             </Card>
             <AddProductModal
                 open={modalOpen}
-                onCancel={() => setModalOpen(false)}
+                product={editProduct}
+                onCancel={() => {
+                    setModalOpen(false)
+                    setEditProduct(null)
+                }}
                 onSuccess={handleSuccess}
             />
             <ImageModal

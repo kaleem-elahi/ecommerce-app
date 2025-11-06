@@ -1,5 +1,6 @@
 'use client'
 
+import { Product as ProductType } from '@/lib/supabase'
 import { Button, Form, Input, InputNumber, Modal, Select, Switch, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { ImageUpload } from './ImageUpload'
@@ -11,6 +12,7 @@ interface AddProductModalProps {
     open: boolean
     onCancel: () => void
     onSuccess: () => void
+    product?: ProductType | null // For edit mode
 }
 
 interface ProductFormValues {
@@ -41,21 +43,76 @@ interface ProductFormValues {
     status?: string
 }
 
-export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalProps) {
+export function AddProductModal({ open, onCancel, onSuccess, product }: AddProductModalProps) {
     const [form] = Form.useForm()
     const [loading, setLoading] = useState(false)
     const [tagsInput, setTagsInput] = useState('')
     const [materialsInput, setMaterialsInput] = useState('')
     const [images, setImages] = useState<string[]>([])
+    const isEditMode = !!product
+
+    // Separate effect to handle images to ensure proper timing
+    useEffect(() => {
+        if (open && product && product.images) {
+            console.log('=== IMAGE SYNC START ===')
+            console.log('Product:', product)
+            console.log('Product images field:', product.images)
+            console.log('Is array?', Array.isArray(product.images))
+            console.log('Type:', typeof product.images)
+
+            let productImages: string[] = []
+            if (Array.isArray(product.images)) {
+                productImages = product.images.filter((img: any) => img && typeof img === 'string' && img.trim().length > 0)
+            } else if (typeof product.images === 'string' && product.images.trim().length > 0) {
+                productImages = [product.images]
+            }
+
+            console.log('Processed images:', productImages)
+            console.log('Count:', productImages.length)
+            console.log('=== IMAGE SYNC END ===')
+
+            setImages(productImages)
+        } else if (open && !product) {
+            setImages([])
+        } else if (!open) {
+            setImages([])
+        }
+    }, [open, product])
 
     useEffect(() => {
         if (open) {
-            form.resetFields()
-            setTagsInput('')
-            setMaterialsInput('')
-            setImages([])
+            if (product) {
+                // Edit mode: populate form with existing product data
+                form.setFieldsValue({
+                    name: product.name,
+                    sku: product.sku,
+                    slug: product.slug,
+                    category: product.category,
+                    subcategory: product.subcategory,
+                    description: product.description,
+                    price: product.price,
+                    currency: product.currency || 'USD',
+                    stock: product.stock || 0,
+                    weightGrams: product.weightGrams,
+                    dimensions: product.dimensions,
+                    color: product.color,
+                    clarity: product.clarity,
+                    origin: product.origin,
+                    cut: product.cut,
+                    grade: product.grade,
+                    featured: product.featured || false,
+                    status: product.status || 'active',
+                })
+                setTagsInput(product.tags?.join(', ') || '')
+                setMaterialsInput(product.materials?.join(', ') || '')
+            } else {
+                // Add mode: reset form
+                form.resetFields()
+                setTagsInput('')
+                setMaterialsInput('')
+            }
         }
-    }, [open, form])
+    }, [open, form, product])
 
     const handleSubmit = async (values: ProductFormValues) => {
         setLoading(true)
@@ -69,8 +126,13 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                 images: images.length > 0 ? images : [],
             }
 
-            const response = await fetch('/api/admin/products', {
-                method: 'POST',
+            const url = isEditMode
+                ? `/api/admin/products/${product!.id}`
+                : '/api/admin/products'
+            const method = isEditMode ? 'PUT' : 'POST'
+
+            const response = await fetch(url, {
+                method,
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -80,15 +142,15 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
             const data = await response.json()
 
             if (response.ok) {
-                message.success('Product added successfully!')
+                message.success(isEditMode ? 'Product updated successfully!' : 'Product added successfully!')
                 form.resetFields()
                 onSuccess()
                 onCancel()
             } else {
-                message.error(data.error || 'Failed to add product')
+                message.error(data.error || `Failed to ${isEditMode ? 'update' : 'add'} product`)
             }
         } catch (error) {
-            console.error('Error adding product:', error)
+            console.error(`Error ${isEditMode ? 'updating' : 'adding'} product:`, error)
             message.error('An error occurred. Please try again.')
         } finally {
             setLoading(false)
@@ -105,7 +167,7 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
 
     return (
         <Modal
-            title="Add New Product"
+            title={isEditMode ? "Edit Product" : "Add New Product"}
             open={open}
             onCancel={handleCancel}
             footer={null}
@@ -125,6 +187,35 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                 }}
                 style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 }}
             >
+                {/* Images */}
+                <div style={{ marginBottom: 16 }}>
+
+                    <Form.Item
+                        name="images"
+                        label="Product Images"
+                        tooltip="Drag & drop images, paste from clipboard, or add URLs. Maximum 10 images."
+                        rules={[
+                            {
+                                validator: () => {
+                                    if (images.length === 0) {
+                                        return Promise.reject('Please add at least one image')
+                                    }
+                                    return Promise.resolve()
+                                }
+                            }
+                        ]}
+                    >
+                        <ImageUpload
+                            value={images}
+                            onChange={(urls) => {
+                                console.log('AddProductModal - ImageUpload onChange:', urls)
+                                setImages(urls)
+                                form.setFieldsValue({ images: urls })
+                            }}
+                        />
+                    </Form.Item>
+                </div>
+
                 {/* Basic Information */}
                 <div style={{ marginBottom: 16 }}>
                     <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Basic Information</h3>
@@ -366,35 +457,6 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                     </Form.Item>
                 </div>
 
-                {/* Images */}
-                <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Images</h3>
-                    
-                    <Form.Item
-                        name="images"
-                        label="Product Images"
-                        tooltip="Drag & drop images, paste from clipboard, or add URLs. Maximum 10 images."
-                        rules={[
-                            {
-                                validator: () => {
-                                    if (images.length === 0) {
-                                        return Promise.reject('Please add at least one image')
-                                    }
-                                    return Promise.resolve()
-                                }
-                            }
-                        ]}
-                    >
-                        <ImageUpload
-                            value={images}
-                            onChange={(urls) => {
-                                setImages(urls)
-                                form.setFieldsValue({ images: urls })
-                            }}
-                        />
-                    </Form.Item>
-                </div>
-
                 {/* Status & Settings */}
                 <div style={{ marginBottom: 16 }}>
                     <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Status & Settings</h3>
@@ -429,7 +491,7 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                             Cancel
                         </Button>
                         <Button type="primary" htmlType="submit" loading={loading}>
-                            Add Product
+                            {isEditMode ? 'Update Product' : 'Add Product'}
                         </Button>
                     </div>
                 </Form.Item>

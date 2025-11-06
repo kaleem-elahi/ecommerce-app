@@ -121,3 +121,4 @@ export function ImageModal({ open, images, initialIndex = 0, onClose }: ImageMod
     )
 }
 
+

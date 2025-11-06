@@ -1,7 +1,7 @@
 'use client'
 
 import { DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
-import { Button, Image, message, Upload } from 'antd'
+import { Button, Image, Modal, message, Upload } from 'antd'
 import type { UploadFile, UploadProps } from 'antd'
 import { useState, useRef, useEffect } from 'react'
 import styles from './ImageUpload.module.css'
@@ -12,13 +12,26 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
-    const [imageUrls, setImageUrls] = useState<string[]>(value)
+    // Helper to normalize image values
+    const getValidImages = (val: string[] | string | undefined): string[] => {
+        if (Array.isArray(val)) {
+            return val.filter(url => url && typeof url === 'string' && url.trim().length > 0)
+        } else if (val && typeof val === 'string' && val.trim().length > 0) {
+            return [val]
+        }
+        return []
+    }
+    
+    const [imageUrls, setImageUrls] = useState<string[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
 
+    // Sync with value prop - simplified version
     useEffect(() => {
-        setImageUrls(value)
+        const valueArray = getValidImages(value)
+        console.log('ImageUpload - Syncing with value prop:', value, '-> valueArray:', valueArray)
+        setImageUrls(valueArray)
     }, [value])
 
     const handleFileToDataURL = (file: File): Promise<string> => {
@@ -163,6 +176,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         const updatedUrls = imageUrls.filter((_, i) => i !== index)
         setImageUrls(updatedUrls)
         onChange?.(updatedUrls)
+        message.success('Image removed')
     }
 
     const handleManualUrlAdd = () => {
@@ -217,43 +231,87 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                 </Button>
             </div>
 
-            {/* Image Preview Grid */}
-            {imageUrls.length > 0 && (
-                <div className={styles.imageGrid}>
-                    {imageUrls.map((url, index) => (
-                        <div key={index} className={styles.imageItem}>
-                            <div className={styles.imageWrapper}>
-                                <Image
-                                    src={url}
-                                    alt={`Preview ${index + 1}`}
-                                    width={120}
-                                    height={120}
-                                    style={{
-                                        objectFit: 'cover',
-                                        borderRadius: 4,
-                                    }}
-                                    fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect fill='%23f0f0f0' width='120' height='120'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
-                                />
-                                <Button
-                                    type="text"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    className={styles.deleteButton}
-                                    onClick={() => removeImage(index)}
-                                    size="small"
-                                />
-                            </div>
-                            <div className={styles.imageIndex}>{index + 1}</div>
+            {/* Image Preview Grid - Always show section, even if empty */}
+            <div style={{ marginTop: 24 }}>
+                <div style={{ 
+                    marginBottom: 12, 
+                    fontSize: 14, 
+                    fontWeight: 500,
+                    color: '#666'
+                }}>
+                    Current Images {imageUrls.length > 0 && `(${imageUrls.length})`}:
+                    {process.env.NODE_ENV === 'development' && (
+                        <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>
+                            (Debug: imageUrls={imageUrls.length}, value={Array.isArray(value) ? value.length : 'N/A'})
+                        </span>
+                    )}
+                </div>
+                
+                {imageUrls.length > 0 ? (
+                    <>
+                        <div className={styles.imageGrid}>
+                            {imageUrls.map((url, index) => (
+                                <div key={`${url}-${index}`} className={styles.imageItem}>
+                                    <div className={styles.imageWrapper}>
+                                        <Image
+                                            src={url}
+                                            alt={`Preview ${index + 1}`}
+                                            width={120}
+                                            height={120}
+                                            style={{
+                                                objectFit: 'cover',
+                                                borderRadius: 4,
+                                                width: '100%',
+                                                height: '100%',
+                                            }}
+                                            preview={{
+                                                mask: 'Preview',
+                                            }}
+                                            fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect fill='%23f0f0f0' width='120' height='120'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                                        />
+                                        <Button
+                                            type="text"
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                            className={styles.deleteButton}
+                                            onClick={() => {
+                                                Modal.confirm({
+                                                    title: 'Delete Image',
+                                                    content: 'Are you sure you want to remove this image?',
+                                                    okText: 'Delete',
+                                                    okType: 'danger',
+                                                    cancelText: 'Cancel',
+                                                    onOk: () => {
+                                                        removeImage(index)
+                                                    },
+                                                })
+                                            }}
+                                            size="small"
+                                            title="Delete image"
+                                        />
+                                    </div>
+                                    <div className={styles.imageIndex}>{index + 1}</div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            )}
-
-            {imageUrls.length > 0 && (
-                <div className={styles.imageCount}>
-                    {imageUrls.length} / 10 images
-                </div>
-            )}
+                        <div className={styles.imageCount} style={{ marginTop: 12 }}>
+                            {imageUrls.length} / 10 images
+                        </div>
+                    </>
+                ) : (
+                    <div style={{ 
+                        padding: 20, 
+                        textAlign: 'center', 
+                        color: '#999', 
+                        fontSize: 14,
+                        border: '1px dashed #d9d9d9',
+                        borderRadius: 4,
+                        background: '#fafafa'
+                    }}>
+                        No images added yet
+                    </div>
+                )}
+            </div>
         </div>
     )
 }

@@ -112,9 +112,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
                 <Space direction="vertical" size={4} className={styles.productMeta}>
                     <Space size={8}>
-                        <Rating value={product.rating} />
+                        <Rating value={product.rating || 0} />
                         <Text type="secondary" className={styles.reviewCount}>
-                            ({product.reviewCount})
+                            ({product.reviewCount || 0})
                         </Text>
                     </Space>
 

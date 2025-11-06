@@ -72,7 +72,7 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                             }}
                             preview={false}
                         />
-                        {hasMultipleImages && (
+                        {hasMultipleImages && record.images && (
                             <div style={{
                                 position: 'absolute',
                                 top: 2,

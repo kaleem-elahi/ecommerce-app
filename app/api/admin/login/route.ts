@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     console.log('Password received:', JSON.stringify(password))
     console.log('Password length:', password.length)
     console.log('Password ends with space:', password.endsWith(' '))
-    console.log('Password char codes:', Array.from(password).map(c => c.charCodeAt(0)))
+    console.log('Password char codes:', password.split('').map((c: string) => c.charCodeAt(0)))
 
     // Verify credentials
     const verification = verifyAdminCredentials(username, password)

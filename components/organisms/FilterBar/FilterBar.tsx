@@ -36,15 +36,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         })
     }
 
-    const handleLocationFilter = () => {
-        const newLocation =
-            filters.dispatchedFrom === 'India' ? undefined : 'India'
-        onFilterChange({
-            ...filters,
-            dispatchedFrom: newLocation,
-        })
-    }
-
     return (
         <div className={styles.filterBar}>
             <div className={styles.filterButtons}>
@@ -54,6 +45,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                         active={!!filters.excludeDigital}
                         onClick={() => handleFilterToggle('excludeDigital')}
                     />
+                    {/* Commented out unused filters - add to ProductFilters interface if needed
                     <FilterButton
                         label="Free delivery"
                         active={!!filters.freeDelivery}
@@ -69,6 +61,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
                         active={filters.dispatchedFrom === 'India'}
                         onClick={handleLocationFilter}
                     />
+                    */}
                 </Space>
             </div>
 

@@ -59,9 +59,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 if (product.images && Array.isArray(product.images)) {
                     productImages = product.images.filter((img: any) => img && typeof img === 'string' && img.trim().length > 0)
                 }
-                
+
                 console.log('Setting form fields including images:', productImages)
-                
+
                 form.setFieldsValue({
                     name: product.name,
                     sku: product.sku,
@@ -99,7 +99,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
         try {
             console.log('handleSubmit - form values:', values)
             console.log('handleSubmit - images from form:', values.images)
-            
+
             // Parse tags and materials from comma-separated strings
             // Images come from form values
             const formData = {

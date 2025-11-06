@@ -179,21 +179,53 @@ Modify the products table schema in Supabase to match your needs, then update th
 
 ## Deployment
 
-### Vercel (Recommended)
+### 🚀 Quick Deploy
 
-1. Push your code to GitHub
-2. Import project in Vercel
+**Recommended: Vercel** (created by Next.js team)
+
+#### Option 1: One-Click Deploy (Easiest)
+```bash
+npm install -g vercel
+vercel
+```
+
+#### Option 2: GitHub Integration
+1. Push code to GitHub
+2. Visit [vercel.com](https://vercel.com) and import your repo
 3. Add environment variables
-4. Deploy!
+4. Click Deploy!
 
-### Other Platforms
+#### Option 3: Use Deploy Script
+```bash
+./scripts/deploy-vercel.sh
+```
 
-The app can be deployed to any platform that supports Next.js:
+### 📋 Deployment Platforms
 
-- Netlify
-- AWS Amplify
-- Digital Ocean
-- Your own server
+| Platform | Best For | Free Tier | Docs |
+|----------|----------|-----------|------|
+| **Vercel** ⭐ | Next.js apps | Yes (100GB) | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| **Netlify** | Alternative | Yes (100GB) | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| **Railway** | Full-stack | $5 credit/mo | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+| **AWS Amplify** | Enterprise | Pay-as-you-go | [DEPLOYMENT.md](./DEPLOYMENT.md) |
+
+📖 **[Read full deployment guide →](./DEPLOYMENT.md)**
+
+### ⚙️ Environment Variables for Production
+
+Set these in your deployment platform:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=your_admin_password
+```
+
+### 💰 Cost Estimate
+
+**Small Site** (< 10k visits/mo): **$0-1/month** (Vercel Free + Supabase Free)  
+**Medium Site** (50k visits/mo): **$45/month** (Vercel Pro + Supabase Pro)  
+**Large Site** (500k+ visits/mo): **$500+/month** (Enterprise tiers)
 
 ## License
 

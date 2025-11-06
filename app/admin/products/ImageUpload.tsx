@@ -1,9 +1,9 @@
 'use client'
 
 import { DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
-import { Button, Image, Modal, message, Upload } from 'antd'
 import type { UploadFile, UploadProps } from 'antd'
-import { useState, useRef, useEffect } from 'react'
+import { Button, Image, message, Modal, Upload } from 'antd'
+import { useEffect, useRef, useState } from 'react'
 import styles from './ImageUpload.module.css'
 
 interface ImageUploadProps {
@@ -21,7 +21,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         }
         return []
     }
-    
+
     const [imageUrls, setImageUrls] = useState<string[]>([])
     const [isDragging, setIsDragging] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -29,9 +29,18 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
 
     // Sync with value prop - simplified version
     useEffect(() => {
+        console.log('=== ImageUpload useEffect TRIGGERED ===')
+        console.log('value prop received:', value)
+        console.log('value type:', typeof value)
+        console.log('value is array?:', Array.isArray(value))
+        console.log('value length:', Array.isArray(value) ? value.length : 'N/A')
+
         const valueArray = getValidImages(value)
-        console.log('ImageUpload - Syncing with value prop:', value, '-> valueArray:', valueArray)
+        console.log('After getValidImages:', valueArray)
+        console.log('valueArray length:', valueArray.length)
+        console.log('Setting imageUrls to:', valueArray)
         setImageUrls(valueArray)
+        console.log('=== ImageUpload useEffect END ===')
     }, [value])
 
     const handleFileToDataURL = (file: File): Promise<string> => {
@@ -46,7 +55,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return
 
-        const imageFiles = Array.from(files).filter(file => 
+        const imageFiles = Array.from(files).filter(file =>
             file.type.startsWith('image/')
         )
 
@@ -233,9 +242,9 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
 
             {/* Image Preview Grid - Always show section, even if empty */}
             <div style={{ marginTop: 24 }}>
-                <div style={{ 
-                    marginBottom: 12, 
-                    fontSize: 14, 
+                <div style={{
+                    marginBottom: 12,
+                    fontSize: 14,
                     fontWeight: 500,
                     color: '#666'
                 }}>
@@ -246,7 +255,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                         </span>
                     )}
                 </div>
-                
+
                 {imageUrls.length > 0 ? (
                     <>
                         <div className={styles.imageGrid}>
@@ -299,10 +308,10 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                         </div>
                     </>
                 ) : (
-                    <div style={{ 
-                        padding: 20, 
-                        textAlign: 'center', 
-                        color: '#999', 
+                    <div style={{
+                        padding: 20,
+                        textAlign: 'center',
+                        color: '#999',
                         fontSize: 14,
                         border: '1px dashed #d9d9d9',
                         borderRadius: 4,

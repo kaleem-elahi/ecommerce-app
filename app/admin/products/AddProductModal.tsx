@@ -48,41 +48,22 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
     const [loading, setLoading] = useState(false)
     const [tagsInput, setTagsInput] = useState('')
     const [materialsInput, setMaterialsInput] = useState('')
-    const [images, setImages] = useState<string[]>([])
     const isEditMode = !!product
-
-    // Separate effect to handle images to ensure proper timing
-    useEffect(() => {
-        if (open && product && product.images) {
-            console.log('=== IMAGE SYNC START ===')
-            console.log('Product:', product)
-            console.log('Product images field:', product.images)
-            console.log('Is array?', Array.isArray(product.images))
-            console.log('Type:', typeof product.images)
-
-            let productImages: string[] = []
-            if (Array.isArray(product.images)) {
-                productImages = product.images.filter((img: any) => img && typeof img === 'string' && img.trim().length > 0)
-            } else if (typeof product.images === 'string' && product.images.trim().length > 0) {
-                productImages = [product.images]
-            }
-
-            console.log('Processed images:', productImages)
-            console.log('Count:', productImages.length)
-            console.log('=== IMAGE SYNC END ===')
-
-            setImages(productImages)
-        } else if (open && !product) {
-            setImages([])
-        } else if (!open) {
-            setImages([])
-        }
-    }, [open, product])
 
     useEffect(() => {
         if (open) {
             if (product) {
                 // Edit mode: populate form with existing product data
+                // Process images first
+                let productImages: string[] = []
+                if (Array.isArray(product.images)) {
+                    productImages = product.images.filter((img: any) => img && typeof img === 'string' && img.trim().length > 0)
+                } else if (typeof product.images === 'string' && product.images.trim().length > 0) {
+                    productImages = [product.images]
+                }
+                
+                console.log('Setting form fields including images:', productImages)
+                
                 form.setFieldsValue({
                     name: product.name,
                     sku: product.sku,
@@ -102,6 +83,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     grade: product.grade,
                     featured: product.featured || false,
                     status: product.status || 'active',
+                    images: productImages, // Set images in form
                 })
                 setTagsInput(product.tags?.join(', ') || '')
                 setMaterialsInput(product.materials?.join(', ') || '')
@@ -117,13 +99,16 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
     const handleSubmit = async (values: ProductFormValues) => {
         setLoading(true)
         try {
+            console.log('handleSubmit - form values:', values)
+            console.log('handleSubmit - images from form:', values.images)
+            
             // Parse tags and materials from comma-separated strings
-            // Images are handled by ImageUpload component
+            // Images come from form values
             const formData = {
                 ...values,
                 tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [],
                 materials: materialsInput ? materialsInput.split(',').map(m => m.trim()).filter(m => m) : [],
-                images: images.length > 0 ? images : [],
+                images: values.images && values.images.length > 0 ? values.images : [],
             }
 
             const url = isEditMode
@@ -161,7 +146,6 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
         form.resetFields()
         setTagsInput('')
         setMaterialsInput('')
-        setImages([])
         onCancel()
     }
 
@@ -189,30 +173,25 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
             >
                 {/* Images */}
                 <div style={{ marginBottom: 16 }}>
-
                     <Form.Item
                         name="images"
                         label="Product Images"
                         tooltip="Drag & drop images, paste from clipboard, or add URLs. Maximum 10 images."
                         rules={[
                             {
-                                validator: () => {
-                                    if (images.length === 0) {
+                                validator: (_, value) => {
+                                    console.log('Form validator - checking images:', value)
+                                    if (!value || value.length === 0) {
                                         return Promise.reject('Please add at least one image')
                                     }
                                     return Promise.resolve()
                                 }
                             }
                         ]}
+                        trigger="onChange"
+                        valuePropName="value"
                     >
-                        <ImageUpload
-                            value={images}
-                            onChange={(urls) => {
-                                console.log('AddProductModal - ImageUpload onChange:', urls)
-                                setImages(urls)
-                                form.setFieldsValue({ images: urls })
-                            }}
-                        />
+                        <ImageUpload />
                     </Form.Item>
                 </div>
 

@@ -1,7 +1,10 @@
 'use client'
 
-import { Button, Form, Input, InputNumber, Modal, Switch, message } from 'antd'
+import { Button, Form, Input, InputNumber, Modal, Select, Switch, message } from 'antd'
 import { useEffect, useState } from 'react'
+
+const { Option } = Select
+const { TextArea } = Input
 
 interface AddProductModalProps {
     open: boolean
@@ -10,39 +13,66 @@ interface AddProductModalProps {
 }
 
 interface ProductFormValues {
+    sku?: string
     name: string
+    slug?: string
+    category?: string
+    subcategory?: string
     description?: string
     price: number
-    originalPrice?: number
-    discount?: number
-    imageUrl: string
-    rating?: number
-    reviewCount?: number
-    freeDelivery?: boolean
-    starSeller?: boolean
-    dispatchedFrom?: string
-    category?: string
+    currency?: string
+    stock?: number
+    weightGrams?: number
+    dimensions?: {
+        length_mm?: number
+        width_mm?: number
+        height_mm?: number
+    }
+    color?: string
+    clarity?: string
+    origin?: string
+    cut?: string
+    grade?: string
+    materials?: string[]
+    tags?: string[]
+    images?: string[]
+    featured?: boolean
+    status?: string
 }
 
 export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalProps) {
     const [form] = Form.useForm()
     const [loading, setLoading] = useState(false)
+    const [tagsInput, setTagsInput] = useState('')
+    const [imagesInput, setImagesInput] = useState('')
+    const [materialsInput, setMaterialsInput] = useState('')
 
     useEffect(() => {
         if (open) {
             form.resetFields()
+            setTagsInput('')
+            setImagesInput('')
+            setMaterialsInput('')
         }
     }, [open, form])
 
     const handleSubmit = async (values: ProductFormValues) => {
         setLoading(true)
         try {
+            // Parse tags, materials, and images from comma-separated strings
+            const formData = {
+                ...values,
+                tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [],
+                materials: materialsInput ? materialsInput.split(',').map(m => m.trim()).filter(m => m) : [],
+                images: imagesInput ? imagesInput.split(',').map(i => i.trim()).filter(i => i) : [],
+            }
+
             const response = await fetch('/api/admin/products', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(values),
+                body: JSON.stringify(formData),
             })
 
             const data = await response.json()
@@ -65,6 +95,9 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
 
     const handleCancel = () => {
         form.resetFields()
+        setTagsInput('')
+        setImagesInput('')
+        setMaterialsInput('')
         onCancel()
     }
 
@@ -74,7 +107,8 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
             open={open}
             onCancel={handleCancel}
             footer={null}
-            width={800}
+            width={900}
+            style={{ top: 20 }}
             destroyOnClose
         >
             <Form
@@ -82,165 +116,297 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
                 layout="vertical"
                 onFinish={handleSubmit}
                 initialValues={{
-                    rating: 0,
-                    reviewCount: 0,
-                    freeDelivery: false,
-                    starSeller: false,
+                    currency: 'USD',
+                    stock: 0,
+                    featured: false,
+                    status: 'active',
                 }}
+                style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: 8 }}
             >
-                <Form.Item
-                    name="name"
-                    label="Product Name"
-                    rules={[{ required: true, message: 'Please enter product name' }]}
-                >
-                    <Input placeholder="Enter product name" />
-                </Form.Item>
+                {/* Basic Information */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Basic Information</h3>
 
-                <Form.Item
-                    name="description"
-                    label="Description"
-                >
-                    <Input.TextArea
-                        rows={4}
-                        placeholder="Enter product description"
-                    />
-                </Form.Item>
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="name"
+                            label="Product Name"
+                            rules={[{ required: true, message: 'Please enter product name' }]}
+                            style={{ flex: 2 }}
+                        >
+                            <Input placeholder="Enter product name" />
+                        </Form.Item>
 
-                <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="sku"
+                            label="SKU"
+                            style={{ flex: 1 }}
+                        >
+                            <Input placeholder="Stock keeping unit" />
+                        </Form.Item>
+                    </div>
+
                     <Form.Item
-                        name="price"
-                        label="Price (₹)"
-                        rules={[
-                            { required: true, message: 'Please enter price' },
-                            { type: 'number', min: 0, message: 'Price must be positive' },
-                        ]}
-                        style={{ flex: 1 }}
+                        name="slug"
+                        label="Slug (URL-friendly name)"
+                        tooltip="Auto-generated from name if left empty"
                     >
-                        <InputNumber
-                            style={{ width: '100%' }}
-                            placeholder="0.00"
-                            prefix="₹"
-                            min={0}
-                            step={0.01}
+                        <Input placeholder="product-slug" />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="description"
+                        label="Description"
+                    >
+                        <TextArea
+                            rows={4}
+                            placeholder="Enter product description"
+                        />
+                    </Form.Item>
+
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="category"
+                            label="Category"
+                            style={{ flex: 1 }}
+                        >
+                            <Input placeholder="e.g., jewelry, stones" />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="subcategory"
+                            label="Subcategory"
+                            style={{ flex: 1 }}
+                        >
+                            <Input placeholder="e.g., rings, necklaces" />
+                        </Form.Item>
+                    </div>
+                </div>
+
+                {/* Pricing & Stock */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Pricing & Stock</h3>
+
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="price"
+                            label="Price"
+                            rules={[
+                                { required: true, message: 'Please enter price' },
+                                { type: 'number', min: 0, message: 'Price must be positive' },
+                            ]}
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0.00"
+                                min={0}
+                                step={0.01}
+                                precision={2}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="currency"
+                            label="Currency"
+                            style={{ flex: 1 }}
+                        >
+                            <Select>
+                                <Option value="USD">USD ($)</Option>
+                                <Option value="INR">INR (₹)</Option>
+                                <Option value="EUR">EUR (€)</Option>
+                                <Option value="GBP">GBP (£)</Option>
+                            </Select>
+                        </Form.Item>
+
+                        <Form.Item
+                            name="stock"
+                            label="Stock Quantity"
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </Form.Item>
+                    </div>
+                </div>
+
+                {/* Physical Attributes */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Physical Attributes</h3>
+
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="weightGrams"
+                            label="Weight (grams)"
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0.000"
+                                min={0}
+                                step={0.001}
+                                precision={3}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name={['dimensions', 'length_mm']}
+                            label="Length (mm)"
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name={['dimensions', 'width_mm']}
+                            label="Width (mm)"
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name={['dimensions', 'height_mm']}
+                            label="Height (mm)"
+                            style={{ flex: 1 }}
+                        >
+                            <InputNumber
+                                style={{ width: '100%' }}
+                                placeholder="0"
+                                min={0}
+                            />
+                        </Form.Item>
+                    </div>
+                </div>
+
+                {/* Gemstone/Stone Attributes */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Gemstone Attributes</h3>
+
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                        <Form.Item
+                            name="color"
+                            label="Color"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Input placeholder="e.g., Red, Blue, Green" />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="clarity"
+                            label="Clarity"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Input placeholder="e.g., VVS1, VS2" />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="origin"
+                            label="Origin"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Input placeholder="e.g., Yemen, India" />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="cut"
+                            label="Cut"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Input placeholder="e.g., Round, Oval, Princess" />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="grade"
+                            label="Grade"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Input placeholder="e.g., A, AA, AAA" />
+                        </Form.Item>
+                    </div>
+                </div>
+
+                {/* Materials & Tags */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Materials & Classification</h3>
+
+                    <Form.Item
+                        label="Materials (comma-separated)"
+                        tooltip="e.g., agate, gemstone, silver"
+                    >
+                        <Input
+                            value={materialsInput}
+                            onChange={(e) => setMaterialsInput(e.target.value)}
+                            placeholder="agate, gemstone, silver"
                         />
                     </Form.Item>
 
                     <Form.Item
-                        name="originalPrice"
-                        label="Original Price (₹)"
-                        rules={[
-                            { type: 'number', min: 0, message: 'Price must be positive' },
-                        ]}
-                        style={{ flex: 1 }}
+                        label="Tags (comma-separated)"
+                        tooltip="e.g., premium, handmade, islamic"
                     >
-                        <InputNumber
-                            style={{ width: '100%' }}
-                            placeholder="0.00"
-                            prefix="₹"
-                            min={0}
-                            step={0.01}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="discount"
-                        label="Discount (%)"
-                        rules={[
-                            { type: 'number', min: 0, max: 100, message: 'Discount must be between 0-100' },
-                        ]}
-                        style={{ flex: 1 }}
-                    >
-                        <InputNumber
-                            style={{ width: '100%' }}
-                            placeholder="0"
-                            min={0}
-                            max={100}
-                            suffix="%"
+                        <Input
+                            value={tagsInput}
+                            onChange={(e) => setTagsInput(e.target.value)}
+                            placeholder="premium, handmade, islamic"
                         />
                     </Form.Item>
                 </div>
 
-                <Form.Item
-                    name="imageUrl"
-                    label="Image URL"
-                    rules={[
-                        { required: true, message: 'Please enter image URL' },
-                        { type: 'url', message: 'Please enter a valid URL' },
-                    ]}
-                >
-                    <Input placeholder="https://example.com/image.jpg" />
-                </Form.Item>
-
-                <div style={{ display: 'flex', gap: 16 }}>
-                    <Form.Item
-                        name="rating"
-                        label="Rating"
-                        rules={[
-                            { type: 'number', min: 0, max: 5, message: 'Rating must be between 0-5' },
-                        ]}
-                        style={{ flex: 1 }}
-                    >
-                        <InputNumber
-                            style={{ width: '100%' }}
-                            placeholder="0.0"
-                            min={0}
-                            max={5}
-                            step={0.1}
-                        />
-                    </Form.Item>
+                {/* Images */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Images</h3>
 
                     <Form.Item
-                        name="reviewCount"
-                        label="Review Count"
-                        rules={[
-                            { type: 'number', min: 0, message: 'Review count must be positive' },
-                        ]}
-                        style={{ flex: 1 }}
+                        label="Image URLs (comma-separated)"
+                        tooltip="Enter multiple image URLs separated by commas"
                     >
-                        <InputNumber
-                            style={{ width: '100%' }}
-                            placeholder="0"
-                            min={0}
+                        <TextArea
+                            value={imagesInput}
+                            onChange={(e) => setImagesInput(e.target.value)}
+                            rows={3}
+                            placeholder="https://example.com/image1.jpg, https://example.com/image2.jpg"
                         />
                     </Form.Item>
                 </div>
 
-                <div style={{ display: 'flex', gap: 16 }}>
-                    <Form.Item
-                        name="category"
-                        label="Category"
-                        style={{ flex: 1 }}
-                    >
-                        <Input placeholder="e.g., jewelry, stones, home-decor" />
-                    </Form.Item>
+                {/* Status & Settings */}
+                <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Status & Settings</h3>
 
-                    <Form.Item
-                        name="dispatchedFrom"
-                        label="Dispatched From"
-                        style={{ flex: 1 }}
-                    >
-                        <Input placeholder="e.g., India, USA" />
-                    </Form.Item>
-                </div>
+                    <div style={{ display: 'flex', gap: 16 }}>
+                        <Form.Item
+                            name="status"
+                            label="Status"
+                            style={{ flex: 1 }}
+                        >
+                            <Select>
+                                <Option value="active">Active</Option>
+                                <Option value="draft">Draft</Option>
+                                <Option value="archived">Archived</Option>
+                            </Select>
+                        </Form.Item>
 
-                <div style={{ display: 'flex', gap: 16 }}>
-                    <Form.Item
-                        name="freeDelivery"
-                        label="Free Delivery"
-                        valuePropName="checked"
-                        style={{ flex: 1 }}
-                    >
-                        <Switch />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="starSeller"
-                        label="Star Seller"
-                        valuePropName="checked"
-                        style={{ flex: 1 }}
-                    >
-                        <Switch />
-                    </Form.Item>
+                        <Form.Item
+                            name="featured"
+                            label="Featured"
+                            valuePropName="checked"
+                            style={{ flex: 1, display: 'flex', alignItems: 'center', marginTop: 32 }}
+                        >
+                            <Switch />
+                        </Form.Item>
+                    </div>
                 </div>
 
                 <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
@@ -257,4 +423,3 @@ export function AddProductModal({ open, onCancel, onSuccess }: AddProductModalPr
         </Modal>
     )
 }
-

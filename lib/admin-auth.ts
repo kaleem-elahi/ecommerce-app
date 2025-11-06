@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 
 // Admin credentials
 const ADMIN_USERS = {
-  Kaleem: 'theagatecity@ks ',
+  Kaleem: 'theagatecity@ks',
   Shahrukh: 'theagatecity@sk',
 }
 

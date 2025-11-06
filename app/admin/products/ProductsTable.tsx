@@ -6,6 +6,7 @@ import { Button, Card, Image, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useState } from 'react'
 import { AddProductModal } from './AddProductModal'
+import { ImageModal } from './ImageModal'
 import styles from './products.module.css'
 
 const { Title } = Typography
@@ -17,6 +18,9 @@ interface ProductsTableProps {
 
 export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
     const [modalOpen, setModalOpen] = useState(false)
+    const [imageModalOpen, setImageModalOpen] = useState(false)
+    const [selectedProductImages, setSelectedProductImages] = useState<string[]>([])
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
     const columns: ColumnsType<Product> = [
         {
@@ -24,22 +28,60 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
             key: 'image',
             width: 100,
             render: (_: any, record: Product) => {
-                const imageUrl = record.images && record.images.length > 0
-                    ? record.images[0]
+                const imageUrl = record.images && record.images.length > 0 
+                    ? record.images[0] 
                     : null
+                const hasMultipleImages = record.images && record.images.length > 1
+                
+                const handleImageClick = () => {
+                    if (record.images && record.images.length > 0) {
+                        setSelectedProductImages(record.images)
+                        setSelectedImageIndex(0)
+                        setImageModalOpen(true)
+                    }
+                }
+
                 return imageUrl ? (
-                    <Image
-                        src={imageUrl}
-                        alt={record.name}
-                        width={60}
-                        height={60}
-                        style={{ objectFit: 'cover', borderRadius: 4 }}
-                    />
+                    <div 
+                        style={{ 
+                            position: 'relative',
+                            cursor: hasMultipleImages ? 'pointer' : 'default'
+                        }}
+                        onClick={hasMultipleImages ? handleImageClick : undefined}
+                    >
+                        <Image
+                            src={imageUrl}
+                            alt={record.name}
+                            width={60}
+                            height={60}
+                            style={{ 
+                                objectFit: 'cover', 
+                                borderRadius: 4,
+                                cursor: hasMultipleImages ? 'pointer' : 'default'
+                            }}
+                            preview={false}
+                        />
+                        {hasMultipleImages && (
+                            <div style={{
+                                position: 'absolute',
+                                top: 2,
+                                right: 2,
+                                background: 'rgba(143, 97, 219, 0.9)',
+                                color: '#fff',
+                                fontSize: 10,
+                                padding: '2px 6px',
+                                borderRadius: 10,
+                                fontWeight: 600,
+                            }}>
+                                +{record.images.length - 1}
+                            </div>
+                        )}
+                    </div>
                 ) : (
-                    <div style={{
-                        width: 60,
-                        height: 60,
-                        backgroundColor: '#f0f0f0',
+                    <div style={{ 
+                        width: 60, 
+                        height: 60, 
+                        backgroundColor: '#f0f0f0', 
                         borderRadius: 4,
                         display: 'flex',
                         alignItems: 'center',
@@ -219,6 +261,12 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                 open={modalOpen}
                 onCancel={() => setModalOpen(false)}
                 onSuccess={handleSuccess}
+            />
+            <ImageModal
+                open={imageModalOpen}
+                images={selectedProductImages}
+                initialIndex={selectedImageIndex}
+                onClose={() => setImageModalOpen(false)}
             />
         </div>
     )

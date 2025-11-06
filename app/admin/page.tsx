@@ -9,7 +9,7 @@ export default async function AdminDashboardPage() {
         totalProducts: products.length,
         totalValue: products.reduce((sum, p) => sum + p.price, 0),
         averageRating: products.length > 0
-            ? products.reduce((sum, p) => sum + p.rating, 0) / products.length
+            ? products.reduce((sum, p) => sum + (p.rating || 0), 0) / products.length
             : 0,
     }
 

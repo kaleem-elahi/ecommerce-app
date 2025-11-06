@@ -144,6 +144,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         return () => {
             window.removeEventListener('paste', handlePasteEvent)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [imageUrls])
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

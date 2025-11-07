@@ -282,6 +282,10 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                         showSizeChanger: true,
                         showTotal: (total) => `Total ${total} products`,
                     }}
+                    onRow={(record) => ({
+                        onDoubleClick: () => handleEdit(record),
+                        style: { cursor: 'pointer' },
+                    })}
                 />
             </Card>
             <AddProductModal

@@ -39,11 +39,11 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
             key: 'image',
             width: 100,
             render: (_: any, record: Product) => {
-                const imageUrl = record.images && record.images.length > 0 
-                    ? record.images[0] 
+                const imageUrl = record.images && record.images.length > 0
+                    ? record.images[0]
                     : null
                 const hasMultipleImages = record.images && record.images.length > 1
-                
+
                 const handleImageClick = () => {
                     if (record.images && record.images.length > 0) {
                         setSelectedProductImages(record.images)
@@ -53,8 +53,8 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                 }
 
                 return imageUrl ? (
-                    <div 
-                        style={{ 
+                    <div
+                        style={{
                             position: 'relative',
                             cursor: hasMultipleImages ? 'pointer' : 'default'
                         }}
@@ -65,8 +65,8 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                             alt={record.name}
                             width={60}
                             height={60}
-                            style={{ 
-                                objectFit: 'cover', 
+                            style={{
+                                objectFit: 'cover',
                                 borderRadius: 4,
                                 cursor: hasMultipleImages ? 'pointer' : 'default'
                             }}
@@ -89,10 +89,10 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
                         )}
                     </div>
                 ) : (
-                    <div style={{ 
-                        width: 60, 
-                        height: 60, 
-                        backgroundColor: '#f0f0f0', 
+                    <div style={{
+                        width: 60,
+                        height: 60,
+                        backgroundColor: '#f0f0f0',
                         borderRadius: 4,
                         display: 'flex',
                         alignItems: 'center',

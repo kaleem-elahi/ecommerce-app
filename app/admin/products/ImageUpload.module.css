@@ -82,8 +82,7 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    background: rgba(255, 77, 79, 0.95);
-    color: white;
+    color: black;
     border: none;
     opacity: 0.8;
     transition: all 0.2s;
@@ -121,5 +120,45 @@
     font-size: 12px;
     color: #999;
     margin-top: 8px;
+}
+
+.mobileUploadSection {
+    margin-bottom: 16px;
+}
+
+.uploadRequirements {
+    background: #f0f7ff;
+    border: 1px solid #bae0ff;
+    border-radius: 4px;
+    padding: 12px;
+    font-size: 12px;
+    color: #0958d9;
+    line-height: 1.8;
+}
+
+.uploadRequirements div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .dropZone {
+        padding: 30px 15px;
+    }
+    
+    .uploadIcon {
+        font-size: 36px;
+    }
+    
+    .imageGrid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 8px;
+    }
+    
+    .imageWrapper {
+        width: 100px;
+        height: 100px;
+    }
 }
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
+import { DeleteOutlined, PlayCircleOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons'
 import type { UploadFile, UploadProps } from 'antd'
 import { Button, Image, message, Modal, Upload } from 'antd'
 import { useEffect, useRef, useState } from 'react'
@@ -11,9 +11,15 @@ interface ImageUploadProps {
     onChange?: (urls: string[]) => void
 }
 
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024 // 1MB in bytes for images
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB in bytes for videos
+const ASPECT_RATIO_TOLERANCE = 0.1 // 10% tolerance for square aspect ratio
+const MAX_IMAGES = 4 // Maximum 4 images allowed
+const MAX_VIDEOS = 1 // Maximum 1 video allowed
+
 export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
-    // Helper to normalize image values
-    const getValidImages = (val: string[] | string | undefined): string[] => {
+    // Helper to normalize media values
+    const getValidMedia = (val: string[] | string | undefined): string[] => {
         if (Array.isArray(val)) {
             return val.filter(url => url && typeof url === 'string' && url.trim().length > 0)
         } else if (val && typeof val === 'string' && val.trim().length > 0) {
@@ -22,25 +28,52 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         return []
     }
 
-    const [imageUrls, setImageUrls] = useState<string[]>([])
+    // Helper to detect if URL is a video
+    const isVideo = (url: string): boolean => {
+        // Check for video file extensions
+        const videoExtensions = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.ogv']
+        const lowerUrl = url.toLowerCase()
+
+        // Check file extension
+        if (videoExtensions.some(ext => lowerUrl.includes(ext))) {
+            return true
+        }
+
+        // Check for data URL video type
+        if (url.startsWith('data:video/')) {
+            return true
+        }
+
+        // Check for YouTube or Vimeo
+        if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be') || lowerUrl.includes('vimeo.com')) {
+            return true
+        }
+
+        return false
+    }
+
+    const [mediaUrls, setMediaUrls] = useState<string[]>([])
     const [isDragging, setIsDragging] = useState(false)
+    const [isMobile, setIsMobile] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
     const dropZoneRef = useRef<HTMLDivElement>(null)
 
-    // Sync with value prop - simplified version
+    // Detect mobile view
     useEffect(() => {
-        console.log('=== ImageUpload useEffect TRIGGERED ===')
-        console.log('value prop received:', value)
-        console.log('value type:', typeof value)
-        console.log('value is array?:', Array.isArray(value))
-        console.log('value length:', Array.isArray(value) ? value.length : 'N/A')
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth <= 768)
+        }
 
-        const valueArray = getValidImages(value)
-        console.log('After getValidImages:', valueArray)
-        console.log('valueArray length:', valueArray.length)
-        console.log('Setting imageUrls to:', valueArray)
-        setImageUrls(valueArray)
-        console.log('=== ImageUpload useEffect END ===')
+        checkMobile()
+        window.addEventListener('resize', checkMobile)
+
+        return () => window.removeEventListener('resize', checkMobile)
+    }, [])
+
+    // Sync with value prop
+    useEffect(() => {
+        const valueArray = getValidMedia(value)
+        setMediaUrls(valueArray)
     }, [value])
 
     const handleFileToDataURL = (file: File): Promise<string> => {
@@ -52,39 +85,126 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         })
     }
 
+    const validateFileSize = (file: File, isVideo: boolean): boolean => {
+        const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE
+        const sizeLabel = isVideo ? '50MB' : '1MB'
+        const fileType = isVideo ? 'video' : 'image'
+
+        if (file.size > maxSize) {
+            message.error(`${file.name} exceeds ${sizeLabel} size limit. Please choose a smaller ${fileType}.`)
+            return false
+        }
+        return true
+    }
+
+    const validateImageAspectRatio = (file: File): Promise<boolean> => {
+        return new Promise((resolve) => {
+            const img = new window.Image()
+            const objectUrl = URL.createObjectURL(file)
+
+            img.onload = () => {
+                URL.revokeObjectURL(objectUrl)
+                const aspectRatio = img.width / img.height
+                const isSquare = Math.abs(aspectRatio - 1) <= ASPECT_RATIO_TOLERANCE
+
+                if (!isSquare) {
+                    message.error(`${file.name} must be a square image (1:1 aspect ratio). Current ratio: ${img.width}x${img.height}`)
+                    resolve(false)
+                } else {
+                    resolve(true)
+                }
+            }
+
+            img.onerror = () => {
+                URL.revokeObjectURL(objectUrl)
+                message.error(`Failed to load image: ${file.name}`)
+                resolve(false)
+            }
+
+            img.src = objectUrl
+        })
+    }
+
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return
 
-        const imageFiles = Array.from(files).filter(file =>
-            file.type.startsWith('image/')
-        )
+        // Separate images and videos
+        const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
+        const videoFiles = Array.from(files).filter(file => file.type.startsWith('video/'))
 
-        if (imageFiles.length === 0) {
-            message.warning('Please select image files only')
+        if (imageFiles.length === 0 && videoFiles.length === 0) {
+            message.warning('Please select image or video files')
             return
         }
 
-        if (imageFiles.length + imageUrls.length > 10) {
-            message.warning('Maximum 10 images allowed')
+        // Count current images and videos
+        const currentImages = mediaUrls.filter(url => !isVideo(url))
+        const currentVideos = mediaUrls.filter(url => isVideo(url))
+
+        // Check limits
+        if (imageFiles.length + currentImages.length > MAX_IMAGES) {
+            message.warning(`Maximum ${MAX_IMAGES} images allowed`)
+            return
+        }
+
+        if (videoFiles.length + currentVideos.length > MAX_VIDEOS) {
+            message.warning(`Maximum ${MAX_VIDEOS} video allowed`)
             return
         }
 
         try {
             const newUrls: string[] = []
+            let successCount = 0
+
+            // Process images
             for (const file of imageFiles) {
+                // Validate file size
+                if (!validateFileSize(file, false)) {
+                    continue
+                }
+
+                // Validate aspect ratio for images
+                const isValidAspectRatio = await validateImageAspectRatio(file)
+                if (!isValidAspectRatio) {
+                    continue
+                }
+
                 // Convert to data URL for preview
-                // In production, you'd upload to Supabase Storage or another service
                 const dataUrl = await handleFileToDataURL(file)
                 newUrls.push(dataUrl)
+                successCount++
             }
 
-            const updatedUrls = [...imageUrls, ...newUrls]
-            setImageUrls(updatedUrls)
-            onChange?.(updatedUrls)
-            message.success(`Added ${imageFiles.length} image(s)`)
+            // Process videos
+            for (const file of videoFiles) {
+                // Validate file size
+                if (!validateFileSize(file, true)) {
+                    continue
+                }
+
+                // Convert to data URL for preview
+                const dataUrl = await handleFileToDataURL(file)
+                newUrls.push(dataUrl)
+                successCount++
+            }
+
+            if (newUrls.length > 0) {
+                const updatedUrls = [...mediaUrls, ...newUrls]
+                setMediaUrls(updatedUrls)
+                onChange?.(updatedUrls)
+
+                const imageCount = imageFiles.length
+                const videoCount = videoFiles.length
+                const parts = []
+                if (imageCount > 0) parts.push(`${imageCount} image(s)`)
+                if (videoCount > 0) parts.push(`${videoCount} video(s)`)
+                message.success(`Added ${parts.join(' and ')}`)
+            } else {
+                message.error('No valid files were added. Please check the requirements.')
+            }
         } catch (error) {
-            console.error('Error processing images:', error)
-            message.error('Failed to process images')
+            console.error('Error processing files:', error)
+            message.error('Failed to process files')
         }
     }
 
@@ -145,7 +265,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
             window.removeEventListener('paste', handlePasteEvent)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [imageUrls])
+    }, [mediaUrls])
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         handleFiles(e.target.files)
@@ -166,31 +286,42 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
             return
         }
 
-        if (imageUrls.length >= 10) {
-            message.warning('Maximum 10 images allowed')
+        // Check if it's a video or image URL
+        const isVideoUrl = isVideo(url)
+        const currentImages = mediaUrls.filter(u => !isVideo(u))
+        const currentVideos = mediaUrls.filter(u => isVideo(u))
+
+        if (isVideoUrl && currentVideos.length >= MAX_VIDEOS) {
+            message.warning(`Maximum ${MAX_VIDEOS} video allowed`)
             return
         }
 
-        if (imageUrls.includes(url)) {
-            message.warning('This image URL is already added')
+        if (!isVideoUrl && currentImages.length >= MAX_IMAGES) {
+            message.warning(`Maximum ${MAX_IMAGES} images allowed`)
             return
         }
 
-        const updatedUrls = [...imageUrls, url]
-        setImageUrls(updatedUrls)
+        if (mediaUrls.includes(url)) {
+            message.warning('This URL is already added')
+            return
+        }
+
+        const updatedUrls = [...mediaUrls, url]
+        setMediaUrls(updatedUrls)
         onChange?.(updatedUrls)
-        message.success('Image URL added')
+        message.success(`${isVideoUrl ? 'Video' : 'Image'} URL added`)
     }
 
-    const removeImage = (index: number) => {
-        const updatedUrls = imageUrls.filter((_, i) => i !== index)
-        setImageUrls(updatedUrls)
+    const removeMedia = (index: number) => {
+        const mediaType = isVideo(mediaUrls[index]) ? 'Video' : 'Image'
+        const updatedUrls = mediaUrls.filter((_, i) => i !== index)
+        setMediaUrls(updatedUrls)
         onChange?.(updatedUrls)
-        message.success('Image removed')
+        message.success(`${mediaType} removed`)
     }
 
     const handleManualUrlAdd = () => {
-        const url = prompt('Enter image URL:')
+        const url = prompt('Enter image or video URL (YouTube, Vimeo, or direct link):')
         if (url) {
             handleUrlInput(url)
         }
@@ -198,50 +329,84 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
 
     return (
         <div className={styles.imageUploadContainer}>
-            {/* Drag & Drop Zone */}
-            <div
-                ref={dropZoneRef}
-                className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-            >
-                <UploadOutlined className={styles.uploadIcon} />
-                <p className={styles.dropZoneText}>
-                    Drag & drop images here, or{' '}
+            {/* Mobile View: Simple Browse Button */}
+            {isMobile ? (
+                <div className={styles.mobileUploadSection}>
                     <Button
-                        type="link"
+                        type="primary"
+                        icon={<UploadOutlined />}
                         onClick={() => fileInputRef.current?.click()}
-                        style={{ padding: 0, height: 'auto' }}
+                        size="large"
+                        block
+                        style={{ marginBottom: 12 }}
                     >
-                        browse
+                        Browse Images
                     </Button>
-                </p>
-                <p className={styles.dropZoneHint}>
-                    You can also paste images from clipboard (Ctrl+V / Cmd+V)
-                </p>
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={handleFileInputChange}
-                />
-            </div>
+                    <div className={styles.uploadRequirements}>
+                        <div>📸 Max {MAX_IMAGES} images (square 1:1 ratio, 1MB each)</div>
+                        <div>🎥 Max {MAX_VIDEOS} video (50MB, MP4/WebM/MOV)</div>
+                    </div>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*,video/*"
+                        multiple
+                        style={{ display: 'none' }}
+                        onChange={handleFileInputChange}
+                    />
+                </div>
+            ) : (
+                <>
+                    {/* Desktop View: Drag & Drop Zone */}
+                    <div
+                        ref={dropZoneRef}
+                        className={`${styles.dropZone} ${isDragging ? styles.dragging : ''}`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        <UploadOutlined className={styles.uploadIcon} />
+                        <p className={styles.dropZoneText}>
+                            Drag & drop images here, or{' '}
+                            <Button
+                                type="link"
+                                onClick={() => fileInputRef.current?.click()}
+                                style={{ padding: 0, height: 'auto' }}
+                            >
+                                browse
+                            </Button>
+                        </p>
+                        <p className={styles.dropZoneHint}>
+                            You can also paste images from clipboard (Ctrl+V / Cmd+V)
+                        </p>
+                        <div className={styles.uploadRequirements} style={{ marginTop: 12 }}>
+                            <div>📸 Max {MAX_IMAGES} images (square 1:1, 1MB each)</div>
+                            <div>🎥 Max {MAX_VIDEOS} video (50MB, MP4/WebM/MOV)</div>
+                        </div>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*,video/*"
+                            multiple
+                            style={{ display: 'none' }}
+                            onChange={handleFileInputChange}
+                        />
+                    </div>
 
-            {/* Manual URL Input */}
-            <div className={styles.urlInputSection}>
-                <Button
-                    icon={<PlusOutlined />}
-                    onClick={handleManualUrlAdd}
-                    style={{ marginBottom: 12 }}
-                >
-                    Add Image URL
-                </Button>
-            </div>
+                    {/* Manual URL Input - Desktop only */}
+                    <div className={styles.urlInputSection}>
+                        <Button
+                            icon={<PlusOutlined />}
+                            onClick={handleManualUrlAdd}
+                            style={{ marginBottom: 12 }}
+                        >
+                            Add Media URL
+                        </Button>
+                    </div>
+                </>
+            )}
 
-            {/* Image Preview Grid - Always show section, even if empty */}
+            {/* Media Preview Grid - Always show section, even if empty */}
             <div style={{ marginTop: 24 }}>
                 <div style={{
                     marginBottom: 12,
@@ -249,63 +414,109 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                     fontWeight: 500,
                     color: '#666'
                 }}>
-                    Current Images {imageUrls.length > 0 && `(${imageUrls.length})`}:
-                    {process.env.NODE_ENV === 'development' && (
-                        <span style={{ marginLeft: 8, fontSize: 12, color: '#999' }}>
-                            (Debug: imageUrls={imageUrls.length}, value={Array.isArray(value) ? value.length : 'N/A'})
-                        </span>
-                    )}
+                    Current Media {mediaUrls.length > 0 && `(${mediaUrls.filter(u => !isVideo(u)).length} images, ${mediaUrls.filter(u => isVideo(u)).length} video)`}:
                 </div>
 
-                {imageUrls.length > 0 ? (
+                {mediaUrls.length > 0 ? (
                     <>
                         <div className={styles.imageGrid}>
-                            {imageUrls.map((url, index) => (
-                                <div key={`${url}-${index}`} className={styles.imageItem}>
-                                    <div className={styles.imageWrapper}>
-                                        <Image
-                                            src={url}
-                                            alt={`Preview ${index + 1}`}
-                                            width={120}
-                                            height={120}
-                                            style={{
-                                                objectFit: 'cover',
-                                                borderRadius: 4,
-                                                width: '100%',
-                                                height: '100%',
-                                            }}
-                                            preview={{
-                                                mask: 'Preview',
-                                            }}
-                                            fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect fill='%23f0f0f0' width='120' height='120'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
-                                        />
-                                        <Button
-                                            type="text"
-                                            danger
-                                            icon={<DeleteOutlined />}
-                                            className={styles.deleteButton}
-                                            onClick={() => {
-                                                Modal.confirm({
-                                                    title: 'Delete Image',
-                                                    content: 'Are you sure you want to remove this image?',
-                                                    okText: 'Delete',
-                                                    okType: 'danger',
-                                                    cancelText: 'Cancel',
-                                                    onOk: () => {
-                                                        removeImage(index)
-                                                    },
-                                                })
-                                            }}
-                                            size="small"
-                                            title="Delete image"
-                                        />
+                            {mediaUrls.map((url, index) => {
+                                const isVideoFile = isVideo(url)
+                                return (
+                                    <div key={`${url}-${index}`} className={styles.imageItem}>
+                                        <div className={styles.imageWrapper}>
+                                            {isVideoFile ? (
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    background: '#000',
+                                                    borderRadius: 4,
+                                                    position: 'relative'
+                                                }}>
+                                                    {url.includes('youtube.com') || url.includes('youtu.be') || url.includes('vimeo.com') ? (
+                                                        <div style={{
+                                                            color: '#fff',
+                                                            textAlign: 'center',
+                                                            fontSize: 10,
+                                                            padding: 8
+                                                        }}>
+                                                            <PlayCircleOutlined style={{ fontSize: 32, marginBottom: 4 }} />
+                                                            <div>Video URL</div>
+                                                        </div>
+                                                    ) : (
+                                                        <video
+                                                            src={url}
+                                                            style={{
+                                                                width: '100%',
+                                                                height: '100%',
+                                                                objectFit: 'cover',
+                                                                borderRadius: 4
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <div style={{
+                                                        position: 'absolute',
+                                                        top: 4,
+                                                        left: 4,
+                                                        background: 'rgba(255, 0, 0, 0.8)',
+                                                        color: '#fff',
+                                                        fontSize: 9,
+                                                        padding: '2px 6px',
+                                                        borderRadius: 3,
+                                                        fontWeight: 600,
+                                                    }}>
+                                                        VIDEO
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <Image
+                                                    src={url}
+                                                    alt={`Preview ${index + 1}`}
+                                                    width={120}
+                                                    height={120}
+                                                    style={{
+                                                        objectFit: 'cover',
+                                                        borderRadius: 4,
+                                                        width: '100%',
+                                                        height: '100%',
+                                                    }}
+                                                    preview={{
+                                                        mask: 'Preview',
+                                                    }}
+                                                    fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Crect fill='%23f0f0f0' width='120' height='120'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+                                                />
+                                            )}
+                                            <Button
+                                                type="text"
+                                                danger
+                                                icon={<DeleteOutlined />}
+                                                className={styles.deleteButton}
+                                                onClick={() => {
+                                                    Modal.confirm({
+                                                        title: `Delete ${isVideoFile ? 'Video' : 'Image'}`,
+                                                        content: `Are you sure you want to remove this ${isVideoFile ? 'video' : 'image'}?`,
+                                                        okText: 'Delete',
+                                                        okType: 'danger',
+                                                        cancelText: 'Cancel',
+                                                        onOk: () => {
+                                                            removeMedia(index)
+                                                        },
+                                                    })
+                                                }}
+                                                size="small"
+                                                title={`Delete ${isVideoFile ? 'video' : 'image'}`}
+                                            />
+                                        </div>
+                                        <div className={styles.imageIndex}>{index + 1}</div>
                                     </div>
-                                    <div className={styles.imageIndex}>{index + 1}</div>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
                         <div className={styles.imageCount} style={{ marginTop: 12 }}>
-                            {imageUrls.length} / 10 images
+                            {mediaUrls.filter(u => !isVideo(u)).length} / {MAX_IMAGES} images • {mediaUrls.filter(u => isVideo(u)).length} / {MAX_VIDEOS} video
                         </div>
                     </>
                 ) : (
@@ -318,7 +529,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                         borderRadius: 4,
                         background: '#fafafa'
                     }}>
-                        No images added yet
+                        No media added yet
                     </div>
                 )}
             </div>

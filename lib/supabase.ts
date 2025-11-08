@@ -43,7 +43,7 @@ export interface Product {
   grade?: string
   materials?: string[]
   tags?: string[]
-  images?: string[]
+  images?: string[]  // Contains both images and videos (detected by file type)
   featured?: boolean
   status?: string
   rating?: number

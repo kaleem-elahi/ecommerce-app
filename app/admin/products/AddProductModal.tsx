@@ -38,7 +38,7 @@ interface ProductFormValues {
     grade?: string
     materials?: string[]
     tags?: string[]
-    images?: string[]
+    images?: string[]  // Contains both images and videos
     featured?: boolean
     status?: string
 }
@@ -48,6 +48,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
     const [loading, setLoading] = useState(false)
     const [tagsInput, setTagsInput] = useState('')
     const [materialsInput, setMaterialsInput] = useState('')
+    const [requirementsModalOpen, setRequirementsModalOpen] = useState(false)
     const isEditMode = !!product
 
     useEffect(() => {
@@ -81,7 +82,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     grade: product.grade,
                     featured: product.featured || false,
                     status: product.status || 'active',
-                    images: productImages, // Set images in form
+                    images: productImages, // Contains both images and videos
                 })
                 setTagsInput(product.tags?.join(', ') || '')
                 setMaterialsInput(product.materials?.join(', ') || '')
@@ -173,8 +174,24 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 <div style={{ marginBottom: 16 }}>
                     <Form.Item
                         name="images"
-                        label="Product Images"
-                        tooltip="Drag & drop images, paste from clipboard, or add URLs. Maximum 10 images."
+                        label={
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span>Product Media (Images & Video)</span>
+                                <Button
+                                    type="link"
+                                    size="small"
+                                    onClick={() => setRequirementsModalOpen(true)}
+                                    style={{ 
+                                        padding: 0, 
+                                        height: 'auto',
+                                        fontSize: 12,
+                                        color: '#8F61DB'
+                                    }}
+                                >
+                                    📋 Know Requirements
+                                </Button>
+                            </div>
+                        }
                         rules={[
                             {
                                 validator: (_, value) => {
@@ -473,6 +490,184 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     </div>
                 </Form.Item>
             </Form>
+
+            {/* Image Requirements Modal */}
+            <Modal
+                title="📸 Image Upload Requirements"
+                open={requirementsModalOpen}
+                onCancel={() => setRequirementsModalOpen(false)}
+                footer={
+                    <Button type="primary" onClick={() => setRequirementsModalOpen(false)}>
+                        Got it!
+                    </Button>
+                }
+                width={700}
+            >
+                <div style={{ lineHeight: 1.8 }}>
+                    <div style={{ 
+                        background: '#f0f7ff', 
+                        padding: 16, 
+                        borderRadius: 8, 
+                        marginBottom: 20,
+                        border: '1px solid #bae0ff'
+                    }}>
+                        <h4 style={{ marginTop: 0, color: '#0958d9' }}>📐 Media Specifications</h4>
+                        <div style={{ marginBottom: 12 }}>
+                            <strong>Images:</strong>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
+                                <li><strong>Quantity:</strong> Maximum 4 images per product</li>
+                                <li><strong>Aspect Ratio:</strong> Square images only (1:1 ratio)</li>
+                                <li><strong>File Size:</strong> Maximum 1MB per image</li>
+                                <li><strong>Format:</strong> JPG, PNG, WebP, or GIF</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <strong>Video (Optional):</strong>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
+                                <li><strong>Quantity:</strong> 1 video per product</li>
+                                <li><strong>File Size:</strong> Maximum 50MB</li>
+                                <li><strong>Format:</strong> MP4, WebM, MOV</li>
+                                <li><strong>Alternative:</strong> You can also add YouTube or Vimeo URLs</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h4 style={{ marginTop: 0 }}>✨ Best Practices for Product Photos</h4>
+                    
+                    <div style={{ marginBottom: 16 }}>
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: 12,
+                            padding: 12,
+                            background: '#f6ffed',
+                            borderRadius: 8,
+                            marginBottom: 12,
+                            border: '1px solid #b7eb8f'
+                        }}>
+                            <span style={{ fontSize: 20 }}>✅</span>
+                            <div>
+                                <strong>Take photos from a little distance</strong>
+                                <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                                    Ensure the whole product is visible with some empty space around it. This creates a professional look and prevents cropping issues.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: 12,
+                            padding: 12,
+                            background: '#f6ffed',
+                            borderRadius: 8,
+                            marginBottom: 12,
+                            border: '1px solid #b7eb8f'
+                        }}>
+                            <span style={{ fontSize: 20 }}>✅</span>
+                            <div>
+                                <strong>Use square photos (1:1 aspect ratio)</strong>
+                                <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                                    Square images display perfectly in product grids and thumbnails without any cropping.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: 12,
+                            padding: 12,
+                            background: '#fff7e6',
+                            borderRadius: 8,
+                            marginBottom: 12,
+                            border: '1px solid #ffd591'
+                        }}>
+                            <span style={{ fontSize: 20 }}>⚠️</span>
+                            <div>
+                                <strong>Avoid vertical or horizontal photos</strong>
+                                <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                                    Non-square photos will get cropped and may cut off important parts of your product. If you have landscape/portrait photos, crop them to square before uploading.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: 12,
+                            padding: 12,
+                            background: '#f6ffed',
+                            borderRadius: 8,
+                            marginBottom: 12,
+                            border: '1px solid #b7eb8f'
+                        }}>
+                            <span style={{ fontSize: 20 }}>✅</span>
+                            <div>
+                                <strong>Use high-resolution images</strong>
+                                <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                                    Upload high-quality images to ensure they look sharp and clear. The final thumbnail will be generated from your original photo, so quality matters!
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'flex-start', 
+                            gap: 12,
+                            padding: 12,
+                            background: '#f6ffed',
+                            borderRadius: 8,
+                            border: '1px solid #b7eb8f'
+                        }}>
+                            <span style={{ fontSize: 20 }}>✅</span>
+                            <div>
+                                <strong>Use good lighting and clean background</strong>
+                                <p style={{ margin: '4px 0 0 0', color: '#666' }}>
+                                    Natural lighting or soft white light works best. A clean, neutral background helps your product stand out.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ 
+                        background: '#fffbe6', 
+                        padding: 16, 
+                        borderRadius: 8,
+                        border: '1px solid #ffe58f',
+                        marginTop: 20
+                    }}>
+                        <h4 style={{ marginTop: 0, color: '#d48806' }}>💡 Pro Tips</h4>
+                        
+                        <div style={{ marginBottom: 12 }}>
+                            <strong>To convert rectangular photos to square:</strong>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
+                                <li><a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Canva.com</a> (free image editor)</li>
+                                <li><a href="https://www.photopea.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Photopea.com</a> (free Photoshop alternative)</li>
+                                <li><a href="https://www.iloveimg.com/crop-image" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>iloveimg.com/crop-image</a> (quick crop tool)</li>
+                            </ul>
+                        </div>
+
+                        <div style={{ marginBottom: 12 }}>
+                            <strong>🗜️ To compress & resize images (reduce file size):</strong>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
+                                <li><a href="https://image.pi7.org/resize-image-pixel" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Pi7 Image Tool</a> - Resize pixels & compress to specific KB</li>
+                                <li><a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>TinyPNG.com</a> - Smart PNG & JPEG compression</li>
+                                <li><a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Squoosh.app</a> - Google's image compressor</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <strong>🎥 To compress product videos (for social media/presentations):</strong>
+                            <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
+                                <li><a href="https://www.freeconvert.com/video-compressor" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>FreeConvert.com</a> - Free video compressor</li>
+                                <li><a href="https://clideo.com/compress-video" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Clideo.com</a> - Online video compression</li>
+                                <li><a href="https://www.videosmaller.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>VideoSmaller.com</a> - Reduce video file size</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </Modal>
     )
 }

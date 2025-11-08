@@ -181,8 +181,8 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                                     type="link"
                                     size="small"
                                     onClick={() => setRequirementsModalOpen(true)}
-                                    style={{ 
-                                        padding: 0, 
+                                    style={{
+                                        padding: 0,
                                         height: 'auto',
                                         fontSize: 12,
                                         color: '#8F61DB'
@@ -504,10 +504,10 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 width={700}
             >
                 <div style={{ lineHeight: 1.8 }}>
-                    <div style={{ 
-                        background: '#f0f7ff', 
-                        padding: 16, 
-                        borderRadius: 8, 
+                    <div style={{
+                        background: '#f0f7ff',
+                        padding: 16,
+                        borderRadius: 8,
                         marginBottom: 20,
                         border: '1px solid #bae0ff'
                     }}>
@@ -533,11 +533,11 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     </div>
 
                     <h4 style={{ marginTop: 0 }}>✨ Best Practices for Product Photos</h4>
-                    
+
                     <div style={{ marginBottom: 16 }}>
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
                             gap: 12,
                             padding: 12,
                             background: '#f6ffed',
@@ -554,9 +554,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             </div>
                         </div>
 
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
                             gap: 12,
                             padding: 12,
                             background: '#f6ffed',
@@ -573,9 +573,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             </div>
                         </div>
 
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
                             gap: 12,
                             padding: 12,
                             background: '#fff7e6',
@@ -592,9 +592,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             </div>
                         </div>
 
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
                             gap: 12,
                             padding: 12,
                             background: '#f6ffed',
@@ -611,9 +611,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             </div>
                         </div>
 
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'flex-start', 
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
                             gap: 12,
                             padding: 12,
                             background: '#f6ffed',
@@ -630,15 +630,15 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                         </div>
                     </div>
 
-                    <div style={{ 
-                        background: '#fffbe6', 
-                        padding: 16, 
+                    <div style={{
+                        background: '#fffbe6',
+                        padding: 16,
                         borderRadius: 8,
                         border: '1px solid #ffe58f',
                         marginTop: 20
                     }}>
                         <h4 style={{ marginTop: 0, color: '#d48806' }}>💡 Pro Tips</h4>
-                        
+
                         <div style={{ marginBottom: 12 }}>
                             <strong>Optional editing tools:</strong>
                             <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
@@ -653,7 +653,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
                                 <li><a href="https://image.pi7.org/resize-image-pixel" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Pi7 Image Tool</a> - Resize pixels & compress to specific KB</li>
                                 <li><a href="https://tinypng.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>TinyPNG.com</a> - Smart PNG & JPEG compression</li>
-                                <li><a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Squoosh.app</a> - Google's image compressor</li>
+                                <li><a href="https://squoosh.app" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Squoosh.app</a> - Google&apos;s image compressor</li>
                             </ul>
                         </div>
 

@@ -76,7 +76,7 @@ export function AdminLayoutClient({ admin, children }: AdminLayoutClientProps) {
                 <div className={styles.logo}>
                     {!collapsed ? (
                         <picture className={styles.logoPicture}>
-                            <source media="(max-width: 768px)" srcSet="/assets/brand-logo-transparent.svg" />
+                            <source media="(max-width: 768px)" srcSet="/assets/the-agate-city-logo.png" />
                             <Image
                                 src="/assets/the-agate-city-logo.png"
                                 alt="The Agate City Admin"

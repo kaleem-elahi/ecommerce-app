@@ -13,7 +13,6 @@ interface ImageUploadProps {
 
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024 // 1MB in bytes for images
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024 // 50MB in bytes for videos
-const ASPECT_RATIO_TOLERANCE = 0.1 // 10% tolerance for square aspect ratio
 const MAX_IMAGES = 4 // Maximum 4 images allowed
 const MAX_VIDEOS = 1 // Maximum 1 video allowed
 
@@ -97,34 +96,6 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
         return true
     }
 
-    const validateImageAspectRatio = (file: File): Promise<boolean> => {
-        return new Promise((resolve) => {
-            const img = new window.Image()
-            const objectUrl = URL.createObjectURL(file)
-
-            img.onload = () => {
-                URL.revokeObjectURL(objectUrl)
-                const aspectRatio = img.width / img.height
-                const isSquare = Math.abs(aspectRatio - 1) <= ASPECT_RATIO_TOLERANCE
-
-                if (!isSquare) {
-                    message.error(`${file.name} must be a square image (1:1 aspect ratio). Current ratio: ${img.width}x${img.height}`)
-                    resolve(false)
-                } else {
-                    resolve(true)
-                }
-            }
-
-            img.onerror = () => {
-                URL.revokeObjectURL(objectUrl)
-                message.error(`Failed to load image: ${file.name}`)
-                resolve(false)
-            }
-
-            img.src = objectUrl
-        })
-    }
-
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return
 
@@ -154,8 +125,6 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
 
         try {
             const newUrls: string[] = []
-            let successCount = 0
-
             // Process images
             for (const file of imageFiles) {
                 // Validate file size
@@ -163,16 +132,9 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                     continue
                 }
 
-                // Validate aspect ratio for images
-                const isValidAspectRatio = await validateImageAspectRatio(file)
-                if (!isValidAspectRatio) {
-                    continue
-                }
-
                 // Convert to data URL for preview
                 const dataUrl = await handleFileToDataURL(file)
                 newUrls.push(dataUrl)
-                successCount++
             }
 
             // Process videos
@@ -185,7 +147,6 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                 // Convert to data URL for preview
                 const dataUrl = await handleFileToDataURL(file)
                 newUrls.push(dataUrl)
-                successCount++
             }
 
             if (newUrls.length > 0) {
@@ -343,7 +304,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                         Browse Images
                     </Button>
                     <div className={styles.uploadRequirements}>
-                        <div>📸 Max {MAX_IMAGES} images (square 1:1 ratio, 1MB each)</div>
+                        <div>📸 Max {MAX_IMAGES} images (1MB each)</div>
                         <div>🎥 Max {MAX_VIDEOS} video (50MB, MP4/WebM/MOV)</div>
                     </div>
                     <input
@@ -380,7 +341,7 @@ export function ImageUpload({ value = [], onChange }: ImageUploadProps) {
                             You can also paste images from clipboard (Ctrl+V / Cmd+V)
                         </p>
                         <div className={styles.uploadRequirements} style={{ marginTop: 12 }}>
-                            <div>📸 Max {MAX_IMAGES} images (square 1:1, 1MB each)</div>
+                            <div>📸 Max {MAX_IMAGES} images (1MB each)</div>
                             <div>🎥 Max {MAX_VIDEOS} video (50MB, MP4/WebM/MOV)</div>
                         </div>
                         <input

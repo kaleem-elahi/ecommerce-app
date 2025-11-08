@@ -516,7 +516,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             <strong>Images:</strong>
                             <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
                                 <li><strong>Quantity:</strong> Maximum 4 images per product</li>
-                                <li><strong>Aspect Ratio:</strong> Square images only (1:1 ratio)</li>
+                                <li><strong>Aspect Ratio:</strong> Any aspect ratio is allowed (square, portrait, or landscape)</li>
                                 <li><strong>File Size:</strong> Maximum 1MB per image</li>
                                 <li><strong>Format:</strong> JPG, PNG, WebP, or GIF</li>
                             </ul>
@@ -566,9 +566,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                         }}>
                             <span style={{ fontSize: 20 }}>✅</span>
                             <div>
-                                <strong>Use square photos (1:1 aspect ratio)</strong>
+                                <strong>Keep a little breathing room around the product</strong>
                                 <p style={{ margin: '4px 0 0 0', color: '#666' }}>
-                                    Square images display perfectly in product grids and thumbnails without any cropping.
+                                    Whether your photo is portrait, landscape, or square, leave space around the product so it still looks great if a thumbnail crops the edges.
                                 </p>
                             </div>
                         </div>
@@ -585,9 +585,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                         }}>
                             <span style={{ fontSize: 20 }}>⚠️</span>
                             <div>
-                                <strong>Avoid vertical or horizontal photos</strong>
+                                <strong>Preview rectangular photos before publishing</strong>
                                 <p style={{ margin: '4px 0 0 0', color: '#666' }}>
-                                    Non-square photos will get cropped and may cut off important parts of your product. If you have landscape/portrait photos, crop them to square before uploading.
+                                    Some storefront layouts automatically crop to square thumbnails. Double-check the preview to ensure the most important details stay visible.
                                 </p>
                             </div>
                         </div>
@@ -640,9 +640,9 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                         <h4 style={{ marginTop: 0, color: '#d48806' }}>💡 Pro Tips</h4>
                         
                         <div style={{ marginBottom: 12 }}>
-                            <strong>To convert rectangular photos to square:</strong>
+                            <strong>Optional editing tools:</strong>
                             <ul style={{ marginBottom: 0, paddingLeft: 20, marginTop: 4 }}>
-                                <li><a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Canva.com</a> (free image editor)</li>
+                                <li><a href="https://www.canva.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Canva.com</a> (crop, resize, and enhance photos)</li>
                                 <li><a href="https://www.photopea.com" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>Photopea.com</a> (free Photoshop alternative)</li>
                                 <li><a href="https://www.iloveimg.com/crop-image" target="_blank" rel="noopener noreferrer" style={{ color: '#1890ff' }}>iloveimg.com/crop-image</a> (quick crop tool)</li>
                             </ul>

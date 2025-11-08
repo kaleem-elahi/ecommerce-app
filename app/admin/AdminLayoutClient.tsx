@@ -76,7 +76,7 @@ export function AdminLayoutClient({ admin, children }: AdminLayoutClientProps) {
                 <div className={styles.logo}>
                     {!collapsed ? (
                         <picture className={styles.logoPicture}>
-                            <source media="(max-width: 768px)" srcSet="/assets/svg-brand-logo.svg" />
+                            <source media="(max-width: 768px)" srcSet="/assets/brand-logo-transparent.svg" />
                             <Image
                                 src="/assets/the-agate-city-logo.png"
                                 alt="The Agate City Admin"
@@ -87,7 +87,7 @@ export function AdminLayoutClient({ admin, children }: AdminLayoutClientProps) {
                         </picture>
                     ) : (
                         <picture className={styles.logoPictureCollapsed}>
-                            <source media="(max-width: 768px)" srcSet="/assets/svg-brand-logo.svg" />
+                            <source media="(max-width: 768px)" srcSet="/assets/brand-logo-transparent.svg" />
                             <Image
                                 src="/assets/the-agate-city-logo.png"
                                 alt="The Agate City Admin"

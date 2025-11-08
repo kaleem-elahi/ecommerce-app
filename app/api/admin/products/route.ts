@@ -15,7 +15,7 @@ function generateSlug(name: string): string {
 export async function POST(request: NextRequest) {
   try {
     // Verify admin authentication
-    await requireAdmin()
+    const admin = await requireAdmin()
 
     const body = await request.json()
     const {
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
       stock: stock !== undefined ? parseInt(stock) : 0,
       featured: featured || false,
       status: status || 'active',
+      added_by_admin: admin.username,
     }
 
     // Add optional fields
@@ -146,6 +147,7 @@ export async function POST(request: NextRequest) {
       images: data.images,
       featured: data.featured || false,
       status: data.status,
+      addedByAdmin: data.added_by_admin,
       metadata: data.metadata,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

@@ -106,6 +106,7 @@ export async function getProducts(
     images: product.images || [],
     featured: product.featured || false,
     status: product.status || 'active',
+    addedByAdmin: product.added_by_admin || undefined,
     metadata: product.metadata,
     createdAt: product.created_at,
     updatedAt: product.updated_at,

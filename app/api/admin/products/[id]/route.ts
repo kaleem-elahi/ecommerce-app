@@ -142,6 +142,7 @@ export async function PUT(
       images: data.images,
       featured: data.featured || false,
       status: data.status,
+      addedByAdmin: data.added_by_admin,
       metadata: data.metadata,
       createdAt: data.created_at,
       updatedAt: data.updated_at,

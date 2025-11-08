@@ -49,6 +49,7 @@ export interface Product {
   rating?: number
   reviewCount?: number
   freeDelivery?: boolean
+  addedByAdmin?: string
   metadata?: Record<string, any>
   createdAt?: string
   updatedAt?: string

@@ -232,6 +232,17 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
             ),
         },
         {
+            title: 'Added By',
+            dataIndex: 'addedByAdmin',
+            key: 'addedByAdmin',
+            width: 140,
+            render: (addedByAdmin: string | undefined) => (
+                addedByAdmin
+                    ? <span>{addedByAdmin}</span>
+                    : <span style={{ color: '#999', fontSize: 12 }}>Unknown</span>
+            ),
+        },
+        {
             title: 'Actions',
             key: 'actions',
             width: 100,

@@ -60,13 +60,16 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
                         <MenuOutlined />
                     </button>
                     <a className={styles.logo} href="/" aria-label="The Agate City home">
-                        <Image
-                            src="/assets/the-agate-city-logo.png"
-                            alt="The Agate City - Where Elegance is Unveiled"
-                            width={320}
-                            height={72}
-                            priority
-                        />
+                        <picture className={styles.logoPicture}>
+                            <source media="(max-width: 768px)" srcSet="/assets/svg-brand-logo.svg" />
+                            <Image
+                                src="/assets/the-agate-city-logo.png"
+                                alt="The Agate City - Where Elegance is Unveiled"
+                                width={320}
+                                height={72}
+                                priority
+                            />
+                        </picture>
                     </a>
                     <Dropdown menu={{ items: categoryItems }} placement="bottomLeft">
                         <span className={styles.categoriesButton}>

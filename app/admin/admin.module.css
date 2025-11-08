@@ -29,6 +29,25 @@
   font-weight: 700;
 }
 
+.logoPicture,
+.logoPictureCollapsed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoPicture :global(img) {
+  width: 100%;
+  max-width: 160px;
+  height: auto;
+}
+
+.logoPictureCollapsed :global(img) {
+  width: 100%;
+  max-width: 40px;
+  height: auto;
+}
+
 .header {
   background: #fff;
   padding: 0 24px;

@@ -63,6 +63,11 @@
   transform: translateY(-1px);
 }
 
+.logoPicture {
+  display: inline-flex;
+  align-items: center;
+}
+
 .logo :global(img) {
   display: block;
   height: 58px;

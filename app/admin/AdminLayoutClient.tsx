@@ -7,6 +7,7 @@ import {
     UserOutlined
 } from '@ant-design/icons'
 import { Avatar, Button, Dropdown, Layout, Menu, Typography } from 'antd'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
 import styles from './admin.module.css'
@@ -74,9 +75,26 @@ export function AdminLayoutClient({ admin, children }: AdminLayoutClientProps) {
             >
                 <div className={styles.logo}>
                     {!collapsed ? (
-                        <span className={styles.logoText}>Admin Panel</span>
+                        <picture className={styles.logoPicture}>
+                            <source media="(max-width: 768px)" srcSet="/assets/svg-brand-logo.svg" />
+                            <Image
+                                src="/assets/the-agate-city-logo.png"
+                                alt="The Agate City Admin"
+                                width={160}
+                                height={45}
+                                priority
+                            />
+                        </picture>
                     ) : (
-                        <span className={styles.logoIcon}>A</span>
+                        <picture className={styles.logoPictureCollapsed}>
+                            <source media="(max-width: 768px)" srcSet="/assets/svg-brand-logo.svg" />
+                            <Image
+                                src="/assets/the-agate-city-logo.png"
+                                alt="The Agate City Admin"
+                                width={40}
+                                height={40}
+                            />
+                        </picture>
                     )}
                 </div>
                 <Menu

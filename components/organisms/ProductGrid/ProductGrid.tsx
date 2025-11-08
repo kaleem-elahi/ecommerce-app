@@ -37,16 +37,16 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
     }
 
     return (
-        <Row gutter={[12, 16]} className={styles.productGrid}>
+        <Row gutter={[16, 20]} className={styles.productGrid}>
             {products.map((product) => (
                 <Col
                     key={product.id}
                     xs={12}
                     sm={12}
                     md={8}
-                    lg={6}
+                    lg={8}
                     xl={6}
-                    xxl={4}
+                    xxl={6}
                 >
                     <ProductCard
                         product={product}

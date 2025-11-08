@@ -2,13 +2,13 @@
 
 import { Rating } from '@/components/atoms/Rating'
 import { Product } from '@/lib/supabase'
-import { HeartFilled, HeartOutlined, PlayCircleOutlined } from '@ant-design/icons'
-import { Card, Space, Typography } from 'antd'
+import { CaretRightFilled, HeartFilled, HeartOutlined, PlayCircleOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons'
+import { Button, Card, Typography } from 'antd'
 import Image from 'next/image'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import styles from './ProductCard.module.css'
 
-const { Text, Title } = Typography
+const { Text } = Typography
 
 // Helper to detect if URL is a video
 const isVideo = (url: string): boolean => {
@@ -50,11 +50,28 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const [isHovered, setIsHovered] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
 
-    const media = product.images && product.images.length > 0
-        ? product.images
-        : ['https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400']
+    const media = useMemo(() => {
+        return product.images && product.images.length > 0
+            ? product.images
+            : ['/public/assets/the-agate-city-logo.png']
+    }, [product.images])
 
     const hasMultipleMedia = media.length > 1
+    const showBadge = !!product.featured
+    const resolveBrand = (value: any): string | undefined => {
+        if (!value) return undefined
+        if (typeof value === 'string') return value
+        if (typeof value === 'object' && 'name' in value && typeof value.name === 'string') {
+            return value.name
+        }
+        return undefined
+    }
+
+    const brandName =
+        resolveBrand(product.metadata?.brand) ||
+        resolveBrand(product.metadata?.seller) ||
+        resolveBrand((product as any).brand) ||
+        resolveBrand(product.category)
 
     const discountPercentage =
         product.originalPrice && product.price
@@ -64,38 +81,74 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )
             : null
 
-    // Auto-slide media when hovered
+    // Auto-slide media when hovered - wait for videos to finish
     useEffect(() => {
         if (!hasMultipleMedia || !isHovered) return
 
-        const interval = setInterval(() => {
-            setCurrentImageIndex((prev) => (prev + 1) % media.length)
-        }, 3000) // Change media every 3 seconds (longer for videos)
+        const currentMedia = media[currentImageIndex]
+        const isCurrentVideo = isVideo(currentMedia)
+        const isVideoURL = isCurrentVideo && (
+            currentMedia.includes('youtube.com') ||
+            currentMedia.includes('youtu.be') ||
+            currentMedia.includes('vimeo.com')
+        )
+        let timeoutId: NodeJS.Timeout | null = null
 
-        return () => clearInterval(interval)
-    }, [hasMultipleMedia, media.length, isHovered])
+        // If current item is an image, use timer
+        if (!isCurrentVideo) {
+            timeoutId = setTimeout(() => {
+                setCurrentImageIndex((prev) => (prev + 1) % media.length)
+            }, 3000) // Change image every 3 seconds
+        }
+        // For YouTube/Vimeo URLs (no video element), use a longer timer
+        else if (isVideoURL) {
+            timeoutId = setTimeout(() => {
+                setCurrentImageIndex((prev) => (prev + 1) % media.length)
+            }, 10000) // Wait 10 seconds for video URLs (can't detect when they end)
+        }
+        // For actual video files, we'll wait for the 'ended' event (handled in video effect)
 
-    // Handle video autoplay when it becomes active
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId)
+        }
+    }, [hasMultipleMedia, media.length, isHovered, currentImageIndex, media])
+
+    // Handle video autoplay and slide to next when video ends
     useEffect(() => {
         const currentMedia = media[currentImageIndex]
         const isCurrentVideo = isVideo(currentMedia)
+        const videoElement = videoRef.current
 
-        if (videoRef.current && isCurrentVideo) {
+        if (videoElement && isCurrentVideo) {
             // Play current video if hovered
             if (isHovered) {
-                videoRef.current.play().catch(() => {
+                videoElement.play().catch(() => {
                     // Autoplay may be blocked by browser, ignore error
                 })
+
+                // Listen for video end event
+                const handleVideoEnd = () => {
+                    if (hasMultipleMedia && isHovered) {
+                        // Move to next item when video finishes
+                        setCurrentImageIndex((prev) => (prev + 1) % media.length)
+                    }
+                }
+
+                videoElement.addEventListener('ended', handleVideoEnd)
+
+                return () => {
+                    videoElement.removeEventListener('ended', handleVideoEnd)
+                }
             } else {
-                videoRef.current.pause()
-                videoRef.current.currentTime = 0
+                videoElement.pause()
+                videoElement.currentTime = 0
             }
-        } else if (videoRef.current && !isCurrentVideo) {
+        } else if (videoElement && !isCurrentVideo) {
             // If current media is not a video, pause any playing video
-            videoRef.current.pause()
-            videoRef.current.currentTime = 0
+            videoElement.pause()
+            videoElement.currentTime = 0
         }
-    }, [currentImageIndex, isHovered, media])
+    }, [currentImageIndex, isHovered, media, hasMultipleMedia])
 
     const handleWishlistClick = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -105,6 +158,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const handleDotClick = (e: React.MouseEvent, index: number) => {
         e.stopPropagation()
         setCurrentImageIndex(index)
+    }
+
+    const handleAddToCart = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        // Add to cart logic here
+        console.log('Add to cart:', product.id)
+    }
+
+    const handleMoreLikeThis = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        // More like this logic here
+        console.log('More like this:', product.id)
+    }
+
+    const formatReviewCount = (count: number): string => {
+        if (count >= 1000) {
+            return `${(count / 1000).toFixed(1)}k`
+        }
+        return count.toString()
     }
 
     return (
@@ -123,9 +195,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             cover={
                 <div className={styles.imageContainer}>
+                    {/* Bestseller Badge */}
+                    {showBadge && (
+                        <div className={styles.bestsellerBadge}>
+                            Bestseller
+                        </div>
+                    )}
+
                     {/* Carousel Dots */}
                     {hasMultipleMedia && (
-                        <div className={styles.carouselDots}>
+                        <div className={`${styles.carouselDots} ${showBadge ? styles.carouselDotsWithBadge : ''}`}>
                             {media.map((_, index) => {
                                 const isVideoItem = isVideo(media[index])
                                 return (
@@ -140,20 +219,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                         </div>
                     )}
 
-                    {/* Video Badge */}
-                    {isVideo(media[currentImageIndex]) && (
-                        <div className={styles.videoBadge}>
-                            <PlayCircleOutlined style={{ fontSize: 16, marginRight: 4 }} />
-                            <span>VIDEO</span>
-                        </div>
-                    )}
-
-                    {/* Wishlist Icon */}
+                    {/* Wishlist Icon - Hidden by default, shown on hover */}
                     <div className={styles.wishlistIcon} onClick={handleWishlistClick}>
                         {isWishlisted ? (
-                            <HeartFilled style={{ color: '#ff4d4f', fontSize: 20 }} />
+                            <HeartFilled style={{ color: '#ff4d4f', fontSize: 18 }} />
                         ) : (
-                            <HeartOutlined style={{ fontSize: 20 }} />
+                            <HeartOutlined style={{ fontSize: 18 }} />
                         )}
                     </div>
 
@@ -198,49 +269,82 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWEREiMxUf/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                         />
                     )}
+
+                    {isVideo(media[currentImageIndex]) && (
+                        <div className={styles.videoIndicator}>
+                            <CaretRightFilled className={styles.videoIndicatorIcon} />
+                        </div>
+                    )}
                 </div>
             }
             onClick={onClick}
         >
             <div className={styles.productInfo}>
-                <Title level={5} className={styles.productTitle} ellipsis={{ rows: 2 }}>
-                    {product.name}
-                </Title>
+                {/* Product Title with Rating */}
+                <div className={styles.titleRow}>
+                    <div className={styles.productTitle}>
+                        {product.name}
+                    </div>
+                    <div className={styles.ratingContainer}>
+                        <span className={styles.ratingValue}>
+                            {product.rating?.toFixed(1) || '0.0'}
+                        </span>
+                        <span className={styles.starIcon}>★</span>
+                        <span className={styles.reviewCount}>
+                            ({formatReviewCount(product.reviewCount || 0)})
+                        </span>
+                    </div>
+                </div>
 
-                <Space direction="vertical" size={4} className={styles.productMeta}>
-                    <Space size={8}>
-                        <Rating value={product.rating || 0} />
-                        <Text type="secondary" className={styles.reviewCount}>
-                            ({product.reviewCount || 0})
+                {/* Brand Name */}
+                {brandName && (
+                    <Text className={styles.brandName}>
+                        By {brandName}
+                    </Text>
+                )}
+
+                {/* Pricing */}
+                <div className={styles.pricingSection}>
+                    <div className={styles.priceRow}>
+                        <Text className={styles.currentPrice}>
+                            ₹{product.price.toLocaleString()}
                         </Text>
-                    </Space>
-
-                    <Space direction="vertical" size={0}>
-                        <Space size={8}>
-                            <Text strong className={styles.price}>
-                                ₹{product.price.toLocaleString()}
-                            </Text>
-                            {product.originalPrice && (
-                                <>
-                                    <Text delete type="secondary" className={styles.originalPrice}>
-                                        ₹{product.originalPrice.toLocaleString()}
+                        {product.originalPrice && (
+                            <>
+                                <Text delete className={styles.originalPrice}>
+                                    ₹{product.originalPrice.toLocaleString()}
+                                </Text>
+                                {discountPercentage && (
+                                    <Text className={styles.discount}>
+                                        ({discountPercentage}% off)
                                     </Text>
-                                    {discountPercentage && (
-                                        <Text type="danger" className={styles.discount}>
-                                            {discountPercentage}% off
-                                        </Text>
-                                    )}
-                                </>
-                            )}
-                        </Space>
-
-                        {product.freeDelivery && (
-                            <Text type="success" className={styles.deliveryBadge}>
-                                FREE delivery
-                            </Text>
+                                )}
+                            </>
                         )}
-                    </Space>
-                </Space>
+                    </div>
+                    {product.freeDelivery && (
+                        <Text className={styles.deliveryBadge}>
+                            Free delivery
+                        </Text>
+                    )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className={styles.actionButtons}>
+                    <Button
+                        className={styles.addToCartButton}
+                        onClick={handleAddToCart}
+                        icon={<PlusOutlined />}
+                    />
+                    <Button
+                        type="link"
+                        className={styles.moreLikeThisButton}
+                        onClick={handleMoreLikeThis}
+                    >
+                        <span>More like this</span>
+                        <RightOutlined className={styles.moreLikeThisIcon} />
+                    </Button>
+                </div>
             </div>
         </Card>
     )

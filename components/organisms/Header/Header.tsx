@@ -10,6 +10,7 @@ import {
     UserOutlined,
 } from '@ant-design/icons'
 import { Badge, Drawer, Dropdown, Layout, Menu, Space } from 'antd'
+import Image from 'next/image'
 import React, { useState } from 'react'
 import styles from './Header.module.css'
 
@@ -58,11 +59,15 @@ export const Header: React.FC<HeaderProps> = ({ onSearch, searchValue }) => {
                     >
                         <MenuOutlined />
                     </button>
-                    <div className={styles.logo}>
-                        <span className={styles.logoThe}>the</span>{' '}
-                        <span className={styles.logoAkik}>Agate</span>{' '}
-                        <span className={styles.logoCity}>city</span>
-                    </div>
+                    <a className={styles.logo} href="/" aria-label="The Agate City home">
+                        <Image
+                            src="/assets/the-agate-city-logo.png"
+                            alt="The Agate City - Where Elegance is Unveiled"
+                            width={320}
+                            height={72}
+                            priority
+                        />
+                    </a>
                     <Dropdown menu={{ items: categoryItems }} placement="bottomLeft">
                         <span className={styles.categoriesButton}>
                             <MenuOutlined /> <span className={styles.categoriesText}>Categories</span>

@@ -14,9 +14,16 @@ const { Title } = Typography
 interface ProductsTableProps {
     products: Product[]
     onRefresh?: () => void
+    title?: string
+    showAddButton?: boolean
 }
 
-export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
+export function ProductsTable({
+    products,
+    onRefresh,
+    title = 'Products Management',
+    showAddButton = true,
+}: ProductsTableProps) {
     const [modalOpen, setModalOpen] = useState(false)
     const [editProduct, setEditProduct] = useState<Product | null>(null)
     const [imageModalOpen, setImageModalOpen] = useState(false)
@@ -272,15 +279,17 @@ export function ProductsTable({ products, onRefresh }: ProductsTableProps) {
     return (
         <div className={styles.productsPage}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <Title level={2} style={{ margin: 0 }}>Products Management</Title>
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={handleAdd}
-                    size="large"
-                >
-                    Add Product
-                </Button>
+                <Title level={2} style={{ margin: 0 }}>{title}</Title>
+                {showAddButton && (
+                    <Button
+                        type="primary"
+                        icon={<PlusOutlined />}
+                        onClick={handleAdd}
+                        size="large"
+                    >
+                        Add Product
+                    </Button>
+                )}
             </div>
             <Card>
                 <Table

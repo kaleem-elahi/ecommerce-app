@@ -344,3 +344,68 @@ function getMockProducts(searchTerm: string, filters: ProductFilters, sortBy: st
   return filtered
 }
 
+export async function getProductById(id: string): Promise<Product | null> {
+  // Use mock data if Supabase is not configured
+  if (!supabase) {
+    console.log('⚠️ Supabase not configured. Using mock data.')
+    const mockProducts = getMockProducts('', {}, 'relevance')
+    return mockProducts.find(p => p.id === id) || null
+  }
+
+  const { data, error } = await supabase
+    .from('products')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .single()
+
+  if (error) {
+    console.error('Error fetching product:', error)
+    // Return mock data for development if Supabase is not configured
+    if (error.message.includes('Invalid API key') || error.message.includes('JWT')) {
+      const mockProducts = getMockProducts('', {}, 'relevance')
+      return mockProducts.find(p => p.id === id) || null
+    }
+    return null
+  }
+
+  if (!data) {
+    return null
+  }
+
+  // Transform snake_case to camelCase for frontend
+  return {
+    id: data.id,
+    sku: data.sku,
+    name: data.name,
+    slug: data.slug,
+    category: data.category,
+    subcategory: data.subcategory,
+    description: data.description,
+    price: parseFloat(data.price),
+    originalPrice: data.original_price ? parseFloat(data.original_price) : undefined,
+    currency: data.currency || 'USD',
+    stock: data.stock || 0,
+    weightGrams: data.weight_grams ? parseFloat(data.weight_grams) : undefined,
+    dimensions: data.dimensions,
+    color: data.color,
+    clarity: data.clarity,
+    origin: data.origin,
+    cut: data.cut,
+    grade: data.grade,
+    materials: data.materials || [],
+    tags: data.tags || [],
+    images: data.images || [],
+    featured: data.featured || false,
+    status: data.status || 'active',
+    rating: data.rating ? parseFloat(data.rating) : undefined,
+    reviewCount: data.review_count || undefined,
+    freeDelivery: data.free_delivery || false,
+    addedByAdmin: data.added_by_admin || undefined,
+    metadata: data.metadata,
+    createdAt: data.created_at,
+    updatedAt: data.updated_at,
+    deletedAt: data.deleted_at,
+  }
+}
+

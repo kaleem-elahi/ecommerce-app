@@ -7,6 +7,7 @@ import { getProducts } from '@/lib/queries'
 import { Product, ProductFilters } from '@/lib/supabase'
 import { useQuery } from '@tanstack/react-query'
 import { Layout, Spin, Typography } from 'antd'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import styles from './page.module.css'
 
@@ -14,6 +15,7 @@ const { Content } = Layout
 const { Title, Text } = Typography
 
 export default function HomePage() {
+    const router = useRouter()
     const [searchTerm, setSearchTerm] = useState('')
     const [filters, setFilters] = useState<ProductFilters>({})
     const [sortBy, setSortBy] = useState('relevance')
@@ -33,8 +35,7 @@ export default function HomePage() {
     }, [searchTerm, filters, sortBy, refetch])
 
     const handleProductClick = (product: Product) => {
-        console.log('Product clicked:', product)
-        // Navigate to product detail page
+        router.push(`/products/${product.id}`)
     }
 
     return (

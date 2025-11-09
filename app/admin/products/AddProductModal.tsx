@@ -4,6 +4,17 @@ import { Product as ProductType } from '@/lib/supabase'
 import { Button, Form, Input, InputNumber, Modal, Select, Switch, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { ImageUpload } from './ImageUpload'
+import {
+    CLARITY_OPTIONS_CABOCHON,
+    CLARITY_OPTIONS_FACETED,
+    COLOR_OPTIONS,
+    CUT_OPTIONS,
+    GRADE_OPTIONS,
+    MATERIALS_OPTIONS,
+    ORIGIN_OPTIONS,
+    SHAPE_OPTIONS,
+    TAGS_OPTIONS,
+} from './productOptions'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -35,6 +46,7 @@ interface ProductFormValues {
     clarity?: string
     origin?: string
     cut?: string
+    shape?: string
     grade?: string
     materials?: string[]
     tags?: string[]
@@ -46,10 +58,22 @@ interface ProductFormValues {
 export function AddProductModal({ open, onCancel, onSuccess, product }: AddProductModalProps) {
     const [form] = Form.useForm()
     const [loading, setLoading] = useState(false)
-    const [tagsInput, setTagsInput] = useState('')
-    const [materialsInput, setMaterialsInput] = useState('')
     const [requirementsModalOpen, setRequirementsModalOpen] = useState(false)
     const isEditMode = !!product
+    const selectedCut = Form.useWatch('cut', form)
+
+    // State to track custom options for each field
+    const [customColors, setCustomColors] = useState<string[]>([])
+    const [customClarities, setCustomClarities] = useState<string[]>([])
+    const [customOrigins, setCustomOrigins] = useState<string[]>([])
+    const [customCuts, setCustomCuts] = useState<string[]>([])
+    const [customShapes, setCustomShapes] = useState<string[]>([])
+    const [customGrades, setCustomGrades] = useState<string[]>([])
+    const [customMaterials, setCustomMaterials] = useState<string[]>([])
+    const [customTags, setCustomTags] = useState<string[]>([])
+
+    // State to track search values for Enter key handling
+    const [searchValues, setSearchValues] = useState<Record<string, string>>({})
 
     useEffect(() => {
         if (open) {
@@ -62,6 +86,40 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 }
 
                 console.log('Setting form fields including images:', productImages)
+
+                // Extract custom values that aren't in base options
+                if (product.color && !COLOR_OPTIONS.includes(product.color)) {
+                    setCustomColors([product.color])
+                }
+                if (product.clarity && !CLARITY_OPTIONS_FACETED.includes(product.clarity) && !CLARITY_OPTIONS_CABOCHON.includes(product.clarity)) {
+                    setCustomClarities([product.clarity])
+                }
+                if (product.origin && !ORIGIN_OPTIONS.includes(product.origin)) {
+                    setCustomOrigins([product.origin])
+                }
+                if (product.cut && !CUT_OPTIONS.includes(product.cut)) {
+                    setCustomCuts([product.cut])
+                }
+                if (product.grade && !GRADE_OPTIONS.includes(product.grade)) {
+                    setCustomGrades([product.grade])
+                }
+                const shapeValue = (product as any).shape || product.metadata?.shape
+                if (shapeValue && !SHAPE_OPTIONS.includes(shapeValue)) {
+                    setCustomShapes([shapeValue])
+                }
+                // Handle materials and tags
+                if (product.materials && Array.isArray(product.materials)) {
+                    const customMats = product.materials.filter(m => !MATERIALS_OPTIONS.includes(m))
+                    if (customMats.length > 0) {
+                        setCustomMaterials(customMats)
+                    }
+                }
+                if (product.tags && Array.isArray(product.tags)) {
+                    const customTagsList = product.tags.filter(t => !TAGS_OPTIONS.includes(t))
+                    if (customTagsList.length > 0) {
+                        setCustomTags(customTagsList)
+                    }
+                }
 
                 form.setFieldsValue({
                     name: product.name,
@@ -79,19 +137,28 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     clarity: product.clarity,
                     origin: product.origin,
                     cut: product.cut,
+                    shape: shapeValue,
                     grade: product.grade,
                     featured: product.featured || false,
                     status: product.status || 'active',
                     images: productImages, // Contains both images and videos
+                    materials: product.materials || [],
+                    tags: product.tags || [],
                 })
-                setTagsInput(product.tags?.join(', ') || '')
-                setMaterialsInput(product.materials?.join(', ') || '')
             } else {
                 // Add mode: reset form
                 form.resetFields()
-                setTagsInput('')
-                setMaterialsInput('')
             }
+            // Reset custom options and search values
+            setCustomColors([])
+            setCustomClarities([])
+            setCustomOrigins([])
+            setCustomCuts([])
+            setCustomShapes([])
+            setCustomGrades([])
+            setCustomMaterials([])
+            setCustomTags([])
+            setSearchValues({})
         }
     }, [open, form, product])
 
@@ -101,12 +168,11 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
             console.log('handleSubmit - form values:', values)
             console.log('handleSubmit - images from form:', values.images)
 
-            // Parse tags and materials from comma-separated strings
             // Images come from form values
             const formData = {
                 ...values,
-                tags: tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [],
-                materials: materialsInput ? materialsInput.split(',').map(m => m.trim()).filter(m => m) : [],
+                tags: values.tags || [],
+                materials: values.materials || [],
                 images: values.images && values.images.length > 0 ? values.images : [],
             }
 
@@ -143,9 +209,79 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
 
     const handleCancel = () => {
         form.resetFields()
-        setTagsInput('')
-        setMaterialsInput('')
+        // Reset custom options and search values
+        setCustomColors([])
+        setCustomClarities([])
+        setCustomOrigins([])
+        setCustomCuts([])
+        setCustomShapes([])
+        setCustomGrades([])
+        setCustomMaterials([])
+        setCustomTags([])
+        setSearchValues({})
         onCancel()
+    }
+
+    // Determine clarity options based on cut type
+    const getClarityOptions = () => {
+        let baseOptions: string[] = []
+        if (!selectedCut) {
+            baseOptions = [...CLARITY_OPTIONS_FACETED, ...CLARITY_OPTIONS_CABOCHON]
+        } else if (selectedCut === 'Faceted') {
+            baseOptions = CLARITY_OPTIONS_FACETED
+        } else if (selectedCut === 'Cabochon' || selectedCut === 'Raw / Rough' || selectedCut === 'Tumbled' || selectedCut === 'Carved') {
+            baseOptions = CLARITY_OPTIONS_CABOCHON
+        } else {
+            baseOptions = [...CLARITY_OPTIONS_FACETED, ...CLARITY_OPTIONS_CABOCHON]
+        }
+        return [...baseOptions, ...customClarities]
+    }
+
+    // Helper function to handle custom value addition for single-select fields
+    const handleCustomValue = (
+        value: string,
+        setCustomOptions: (options: string[]) => void,
+        currentCustomOptions: string[],
+        baseOptions: string[]
+    ) => {
+        if (value && !baseOptions.includes(value) && !currentCustomOptions.includes(value)) {
+            setCustomOptions([...currentCustomOptions, value])
+        }
+    }
+
+    // Helper function to create options array with custom values
+    const createOptions = (baseOptions: string[], customOptions: string[]) => {
+        const allOptions = [...baseOptions, ...customOptions]
+        return allOptions.map(opt => ({ label: opt, value: opt }))
+    }
+
+    // Handler for Enter key to add custom values in single-select fields
+    const handleKeyDown = (
+        e: React.KeyboardEvent,
+        fieldName: string,
+        setCustomOptions: (options: string[]) => void,
+        currentCustomOptions: string[],
+        baseOptions: string[]
+    ) => {
+        if (e.key === 'Enter') {
+            const searchValue = searchValues[fieldName]
+            if (searchValue && searchValue.trim()) {
+                const trimmedValue = searchValue.trim()
+                if (!baseOptions.includes(trimmedValue) && !currentCustomOptions.includes(trimmedValue)) {
+                    setCustomOptions([...currentCustomOptions, trimmedValue])
+                    // Set the form value
+                    form.setFieldValue(fieldName, trimmedValue)
+                    // Clear search value
+                    setSearchValues({ ...searchValues, [fieldName]: '' })
+                }
+                e.preventDefault()
+            }
+        }
+    }
+
+    // Handler to track search values
+    const handleSearch = (fieldName: string, value: string) => {
+        setSearchValues({ ...searchValues, [fieldName]: value })
     }
 
     return (
@@ -387,23 +523,24 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             label="Color"
                             style={{ flex: 1, minWidth: 150 }}
                         >
-                            <Input placeholder="e.g., Red, Blue, Green" />
-                        </Form.Item>
-
-                        <Form.Item
-                            name="clarity"
-                            label="Clarity"
-                            style={{ flex: 1, minWidth: 150 }}
-                        >
-                            <Input placeholder="e.g., VVS1, VS2" />
-                        </Form.Item>
-
-                        <Form.Item
-                            name="origin"
-                            label="Origin"
-                            style={{ flex: 1, minWidth: 150 }}
-                        >
-                            <Input placeholder="e.g., Yemen, India" />
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type color (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={createOptions(COLOR_OPTIONS, customColors)}
+                                onSearch={(value) => handleSearch('color', value)}
+                                onSelect={(value) => {
+                                    handleCustomValue(value, setCustomColors, customColors, COLOR_OPTIONS)
+                                    setSearchValues({ ...searchValues, color: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'color', setCustomColors, customColors, COLOR_OPTIONS)}
+                                allowClear
+                                notFoundContent={null}
+                            />
                         </Form.Item>
 
                         <Form.Item
@@ -411,7 +548,78 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             label="Cut"
                             style={{ flex: 1, minWidth: 150 }}
                         >
-                            <Input placeholder="e.g., Round, Oval, Princess" />
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type cut (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={createOptions(CUT_OPTIONS, customCuts)}
+                                onSearch={(value) => handleSearch('cut', value)}
+                                onSelect={(value) => {
+                                    handleCustomValue(value, setCustomCuts, customCuts, CUT_OPTIONS)
+                                    setSearchValues({ ...searchValues, cut: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'cut', setCustomCuts, customCuts, CUT_OPTIONS)}
+                                allowClear
+                                notFoundContent={null}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="clarity"
+                            label="Clarity"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type clarity (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={getClarityOptions().map(clarity => ({ label: clarity, value: clarity }))}
+                                onSearch={(value) => handleSearch('clarity', value)}
+                                onSelect={(value) => {
+                                    const baseClarities = getClarityOptions().filter(c => !customClarities.includes(c))
+                                    handleCustomValue(value, setCustomClarities, customClarities, baseClarities)
+                                    setSearchValues({ ...searchValues, clarity: '' })
+                                }}
+                                onKeyDown={(e) => {
+                                    const baseClarities = getClarityOptions().filter(c => !customClarities.includes(c))
+                                    handleKeyDown(e, 'clarity', setCustomClarities, customClarities, baseClarities)
+                                }}
+                                allowClear
+                                notFoundContent={null}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="origin"
+                            label="Origin"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type origin (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={createOptions(ORIGIN_OPTIONS, customOrigins)}
+                                onSearch={(value) => handleSearch('origin', value)}
+                                onSelect={(value) => {
+                                    handleCustomValue(value, setCustomOrigins, customOrigins, ORIGIN_OPTIONS)
+                                    setSearchValues({ ...searchValues, origin: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'origin', setCustomOrigins, customOrigins, ORIGIN_OPTIONS)}
+                                allowClear
+                                notFoundContent={null}
+                            />
                         </Form.Item>
 
                         <Form.Item
@@ -419,7 +627,49 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             label="Grade"
                             style={{ flex: 1, minWidth: 150 }}
                         >
-                            <Input placeholder="e.g., A, AA, AAA" />
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type grade (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={createOptions(GRADE_OPTIONS, customGrades)}
+                                onSearch={(value) => handleSearch('grade', value)}
+                                onSelect={(value) => {
+                                    handleCustomValue(value, setCustomGrades, customGrades, GRADE_OPTIONS)
+                                    setSearchValues({ ...searchValues, grade: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'grade', setCustomGrades, customGrades, GRADE_OPTIONS)}
+                                allowClear
+                                notFoundContent={null}
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="shape"
+                            label="Shape"
+                            style={{ flex: 1, minWidth: 150 }}
+                        >
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type shape (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={createOptions(SHAPE_OPTIONS, customShapes)}
+                                onSearch={(value) => handleSearch('shape', value)}
+                                onSelect={(value) => {
+                                    handleCustomValue(value, setCustomShapes, customShapes, SHAPE_OPTIONS)
+                                    setSearchValues({ ...searchValues, shape: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'shape', setCustomShapes, customShapes, SHAPE_OPTIONS)}
+                                allowClear
+                                notFoundContent={null}
+                            />
                         </Form.Item>
                     </div>
                 </div>
@@ -429,24 +679,54 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                     <h3 style={{ marginBottom: 16, fontSize: 16, fontWeight: 600 }}>Materials & Classification</h3>
 
                     <Form.Item
-                        label="Materials (comma-separated)"
-                        tooltip="e.g., agate, gemstone, silver"
+                        name="materials"
+                        label="Materials"
+                        tooltip="Select one or more materials or type to add custom"
                     >
-                        <Input
-                            value={materialsInput}
-                            onChange={(e) => setMaterialsInput(e.target.value)}
-                            placeholder="agate, gemstone, silver"
+                        <Select
+                            mode="tags"
+                            showSearch
+                            size="small"
+                            placeholder="Select or type materials"
+                            optionFilterProp="label"
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={createOptions(MATERIALS_OPTIONS, customMaterials)}
+                            tokenSeparators={[',']}
+                            onSelect={(value) => {
+                                if (typeof value === 'string' && !MATERIALS_OPTIONS.includes(value) && !customMaterials.includes(value)) {
+                                    setCustomMaterials([...customMaterials, value])
+                                }
+                            }}
+                            allowClear
+                            notFoundContent={null}
                         />
                     </Form.Item>
 
                     <Form.Item
-                        label="Tags (comma-separated)"
-                        tooltip="e.g., premium, handmade, islamic"
+                        name="tags"
+                        label="Tags"
+                        tooltip="Select one or more tags or type to add custom"
                     >
-                        <Input
-                            value={tagsInput}
-                            onChange={(e) => setTagsInput(e.target.value)}
-                            placeholder="premium, handmade, islamic"
+                        <Select
+                            mode="tags"
+                            showSearch
+                            size="small"
+                            placeholder="Select or type tags"
+                            optionFilterProp="label"
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={createOptions(TAGS_OPTIONS, customTags)}
+                            tokenSeparators={[',']}
+                            onSelect={(value) => {
+                                if (typeof value === 'string' && !TAGS_OPTIONS.includes(value) && !customTags.includes(value)) {
+                                    setCustomTags([...customTags, value])
+                                }
+                            }}
+                            allowClear
+                            notFoundContent={null}
                         />
                     </Form.Item>
                 </div>

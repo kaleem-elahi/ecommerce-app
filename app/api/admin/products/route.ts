@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       clarity,
       origin,
       cut,
+      shape,
       grade,
       materials,
       tags,
@@ -106,7 +107,15 @@ export async function POST(request: NextRequest) {
       // Handle single image URL
       insertData.images = [images]
     }
-    if (metadata) insertData.metadata = metadata
+    
+    // Handle metadata - merge shape into metadata if provided
+    const finalMetadata = metadata || {}
+    if (shape) {
+      finalMetadata.shape = shape
+    }
+    if (Object.keys(finalMetadata).length > 0) {
+      insertData.metadata = finalMetadata
+    }
 
     // Insert product into database
     const { data, error } = await supabase

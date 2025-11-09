@@ -38,6 +38,7 @@ export async function PUT(
       clarity,
       origin,
       cut,
+      shape,
       grade,
       materials,
       tags,
@@ -100,7 +101,29 @@ export async function PUT(
     }
     if (featured !== undefined) updateData.featured = featured || false
     if (status !== undefined) updateData.status = status || 'active'
-    if (metadata !== undefined) updateData.metadata = metadata || null
+    
+    // Handle metadata - merge shape into metadata if provided
+    if (metadata !== undefined || shape !== undefined) {
+      // Fetch existing product to preserve metadata
+      const { data: existingProduct } = await supabase
+        .from('products')
+        .select('metadata')
+        .eq('id', productId)
+        .single()
+      
+      const existingMetadata = existingProduct?.metadata || {}
+      const finalMetadata = metadata !== undefined ? { ...existingMetadata, ...metadata } : { ...existingMetadata }
+      
+      if (shape !== undefined) {
+        if (shape) {
+          finalMetadata.shape = shape
+        } else {
+          // Remove shape if explicitly set to null/empty
+          delete finalMetadata.shape
+        }
+      }
+      updateData.metadata = Object.keys(finalMetadata).length > 0 ? finalMetadata : null
+    }
 
     // Update product in database
     const { data, error } = await supabase

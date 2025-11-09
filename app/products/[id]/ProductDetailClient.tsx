@@ -211,7 +211,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                   )}
                 </div>
 
-                <Divider />
+                <Divider style={{ margin: '8px 0' }} />
 
                 {/* Certificate Option */}
                 <div className={styles.optionGroup}>
@@ -223,7 +223,6 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                     onChange={setSelectedCertificate}
                     placeholder="ISO Certified Lab Certificate 400/-(Provide Free of Cost)"
                     className={styles.select}
-                    size="large"
                   >
                     <Select.Option value="iso">
                       ISO Certified Lab Certificate 400/-(Provide Free of Cost)
@@ -241,7 +240,6 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                     onChange={setSelectedPooja}
                     placeholder="-- Please Select --"
                     className={styles.select}
-                    size="large"
                   >
                     <Select.Option value="pooja1">Pooja Option 1</Select.Option>
                     <Select.Option value="pooja2">Pooja Option 2</Select.Option>

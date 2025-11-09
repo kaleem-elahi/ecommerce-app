@@ -183,6 +183,98 @@ const cropImage = async (
     })
 }
 
+// Add watermark to image
+const addWatermark = async (imageSrc: string): Promise<string> => {
+    const image = await createImage(imageSrc)
+
+    // Try to load logo, but continue without it if it fails
+    let logo: HTMLImageElement | null = null
+    try {
+        logo = await createImage('/assets/brand-logo-transparent.png')
+    } catch (error) {
+        console.warn('Logo not found, watermarking with text only:', error)
+    }
+
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+        throw new Error('Could not get canvas context')
+    }
+
+    // Set canvas size to image size
+    canvas.width = image.width
+    canvas.height = image.height
+
+    // Draw the image
+    ctx.drawImage(image, 0, 0)
+
+    // Calculate watermark size (proportional to image)
+    const watermarkHeight = Math.max(30, image.height * 0.08) // 8% of image height, min 30px
+
+    // Set font first to measure text correctly
+    const fontSize = watermarkHeight * 0.6
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+
+    // Measure text width
+    const textWidth = ctx.measureText('theagatecity.com').width
+
+    // Calculate logo width if logo exists
+    const logoWidth = logo ? (watermarkHeight * (logo.width / logo.height)) : 0
+    const gap = logo ? 8 : 0 // Gap between logo and text (only if logo exists)
+
+    // Position watermark in bottom right with padding
+    const padding = Math.max(10, image.width * 0.02) // 2% padding, min 10px
+    const bgPadding = 8
+    const totalWidth = logoWidth + gap + textWidth
+    const bgX = image.width - padding - totalWidth - bgPadding * 2
+    const bgY = image.height - padding - watermarkHeight - bgPadding
+    const bgWidth = totalWidth + bgPadding * 2
+    const bgHeight = watermarkHeight + bgPadding
+
+    // Draw semi-transparent background
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)'
+    ctx.fillRect(bgX, bgY, bgWidth, bgHeight)
+
+    // Draw logo if available
+    if (logo) {
+        ctx.drawImage(
+            logo,
+            bgX + bgPadding,
+            bgY + bgPadding / 2,
+            logoWidth,
+            watermarkHeight
+        )
+    }
+
+    // Draw website text
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(
+        'theagatecity.com',
+        bgX + bgPadding + logoWidth + gap,
+        bgY + bgHeight / 2
+    )
+
+    return new Promise((resolve) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    resolve('')
+                    return
+                }
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result as string)
+                reader.onerror = () => resolve('')
+                reader.readAsDataURL(blob)
+            },
+            'image/jpeg',
+            0.92
+        )
+    })
+}
+
 export function ImageUpload({ value, onChange }: ImageUploadProps) {
     const [fileList, setFileList] = useState<MediaUploadFile[]>([])
     const [isDragging, setIsDragging] = useState(false)
@@ -577,13 +669,22 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
                 return
             }
 
+            // Add watermark to the cropped image
+            const watermarkedImageUrl = await addWatermark(croppedImageUrl)
+
+            if (!watermarkedImageUrl) {
+                message.error('Failed to add watermark')
+                setIsCropping(false)
+                return
+            }
+
             const currentList = fileListRef.current
             const newFile: MediaUploadFile = {
                 uid: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
                 name: cropFileName,
                 status: 'done',
-                url: croppedImageUrl,
-                thumbUrl: croppedImageUrl,
+                url: watermarkedImageUrl,
+                thumbUrl: watermarkedImageUrl,
                 type: 'image/jpeg',
                 isVideo: false,
                 originFileObj: pendingImageFile.current as RcFile,

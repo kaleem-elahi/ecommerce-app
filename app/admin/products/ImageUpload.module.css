@@ -1,135 +1,111 @@
 .imageUploadContainer {
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.dropZone {
-    border: 2px dashed #d9d9d9;
-    border-radius: 8px;
-    padding: 40px 20px;
-    text-align: center;
+.picturesWallWrapper {
+    border: 1px dashed #d9d9d9;
+    border-radius: 12px;
+    padding: 16px;
     background: #fafafa;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    margin-bottom: 16px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    min-height: 180px;
 }
 
-.dropZone:hover {
+.picturesWallWrapper:hover {
+    border-color: #8F61DB;
+}
+
+.picturesWallWrapper.dragging {
     border-color: #8F61DB;
     background: #f5f0ff;
+    box-shadow: 0 0 0 4px rgba(143, 97, 219, 0.12);
 }
 
-.dropZone.dragging {
-    border-color: #8F61DB;
-    background: #f0e8ff;
-    border-style: solid;
+.picturesWallUpload {
+    width: 100%;
 }
 
-.uploadIcon {
-    font-size: 48px;
-    color: #8F61DB;
-    margin-bottom: 12px;
-    display: block;
+.picturesWallUpload :global(.ant-upload-list) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.dropZoneText {
-    font-size: 14px;
-    color: #666;
-    margin: 0 0 8px 0;
-}
-
-.dropZoneHint {
-    font-size: 12px;
-    color: #999;
+.picturesWallUpload :global(.ant-upload-list-picture-card-container),
+.picturesWallUpload :global(.ant-upload.ant-upload-select-picture-card) {
+    width: 120px;
+    height: 120px;
     margin: 0;
 }
 
-.urlInputSection {
-    margin-bottom: 16px;
+.picturesWallUpload :global(.ant-upload-list-item),
+.picturesWallUpload :global(.ant-upload.ant-upload-select-picture-card) {
+    border-radius: 10px;
 }
 
-.imageGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.imageItem {
-    position: relative;
-}
-
-.imageWrapper {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    border: 1px solid #d9d9d9;
-    border-radius: 4px;
+.picturesWallUpload :global(.ant-upload-list-item-thumbnail) {
+    border-radius: 10px;
     overflow: hidden;
-    background: #fafafa;
-    transition: all 0.2s;
 }
 
-.imageWrapper:hover {
-    border-color: #8F61DB;
-    box-shadow: 0 2px 8px rgba(143, 97, 219, 0.2);
-}
-
-.imageWrapper:hover .deleteButton {
-    opacity: 1;
-}
-
-.deleteButton {
-    position: absolute;
-    top: 4px;
-    right: 4px;
-    color: black;
-    border: none;
-    opacity: 0.8;
-    transition: all 0.2s;
-    z-index: 10;
-    width: 28px;
-    height: 28px;
+.uploadButton {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    height: 100%;
+    color: #8F61DB;
 }
 
-.deleteButton:hover {
-    background: #ff4d4f;
-    color: white;
-    opacity: 1;
-    transform: scale(1.1);
+.uploadButtonIcon {
+    font-size: 22px;
+    margin-bottom: 8px;
 }
 
-.imageIndex {
-    position: absolute;
-    bottom: 4px;
-    left: 4px;
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    padding: 2px 6px;
-    border-radius: 2px;
+.uploadButtonText {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.uploadButtonHint {
     font-size: 11px;
-    font-weight: 500;
+    color: #8F61DB;
+    opacity: 0.75;
 }
 
-.imageCount {
+.instructions {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.instructions strong {
+    color: #8F61DB;
+}
+
+.countSummary {
+    margin-top: 6px;
     text-align: center;
     font-size: 12px;
-    color: #999;
-    margin-top: 8px;
+    color: #8c8c8c;
 }
 
-.mobileUploadSection {
-    margin-bottom: 16px;
+.controlsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .uploadRequirements {
     background: #f0f7ff;
     border: 1px solid #bae0ff;
-    border-radius: 4px;
+    border-radius: 8px;
     padding: 12px;
     font-size: 12px;
     color: #0958d9;
@@ -143,22 +119,18 @@
 }
 
 @media (max-width: 768px) {
-    .dropZone {
-        padding: 30px 15px;
+    .picturesWallWrapper {
+        padding: 12px;
     }
-    
-    .uploadIcon {
-        font-size: 36px;
-    }
-    
-    .imageGrid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 8px;
-    }
-    
-    .imageWrapper {
+
+    .picturesWallUpload :global(.ant-upload-list-picture-card-container),
+    .picturesWallUpload :global(.ant-upload.ant-upload-select-picture-card) {
         width: 100px;
         height: 100px;
+    }
+
+    .instructions {
+        font-size: 12px;
     }
 }
 

@@ -3,27 +3,27 @@
 import { Header } from '@/components/organisms/Header'
 import { Product } from '@/lib/supabase'
 import {
-  LeftOutlined,
-  RightOutlined,
-  WhatsAppOutlined,
   CrownOutlined,
   GiftOutlined,
+  LeftOutlined,
+  RightOutlined,
   SafetyOutlined,
   ShoppingCartOutlined,
   ThunderboltOutlined,
+  WhatsAppOutlined,
 } from '@ant-design/icons'
 import {
   Breadcrumb,
   Button,
   Card,
   Col,
+  Divider,
   Layout,
   Radio,
   Row,
   Select,
   Space,
   Typography,
-  Divider,
 } from 'antd'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -46,8 +46,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
   const [customizeOption, setCustomizeOption] = useState<string>('ring')
   const [selectedMetal, setSelectedMetal] = useState<string>('')
 
-  const images = product.images && product.images.length > 0 
-    ? product.images 
+  const images = product.images && product.images.length > 0
+    ? product.images
     : ['/assets/the-agate-city-logo.png']
 
   const handlePreviousImage = () => {
@@ -82,9 +82,14 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
 
   const ratti = product.metadata?.ratti || null
 
+  const handleSearch = (value: string) => {
+    // Navigate to home page with search query
+    router.push(`/?search=${encodeURIComponent(value)}`)
+  }
+
   return (
     <Layout className={styles.layout}>
-      <Header />
+      <Header onSearch={handleSearch} />
       <Content className={styles.content}>
         <div className={styles.container}>
           {/* Breadcrumbs */}
@@ -133,9 +138,8 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
                     {images.map((img, index) => (
                       <div
                         key={index}
-                        className={`${styles.thumbnail} ${
-                          index === currentImageIndex ? styles.activeThumbnail : ''
-                        }`}
+                        className={`${styles.thumbnail} ${index === currentImageIndex ? styles.activeThumbnail : ''
+                          }`}
                         onClick={() => handleThumbnailClick(index)}
                       >
                         <Image
@@ -358,7 +362,7 @@ export function ProductDetailClient({ product }: ProductDetailClientProps) {
               <Card className={styles.policyCard}>
                 <Title level={4}>Return Policy</Title>
                 <Text>
-                  We offer a hassle-free return policy. If you're not satisfied, return within 30
+                  We offer a hassle-free return policy. If you&apos;re not satisfied, return within 30
                   days for a full refund.
                 </Text>
               </Card>

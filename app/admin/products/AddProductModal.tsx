@@ -15,6 +15,7 @@ import {
     SHAPE_OPTIONS,
     TAGS_OPTIONS,
 } from './productOptions'
+import { getCategories, getSubcategories } from './categoryOptions'
 
 const { Option } = Select
 const { TextArea } = Input
@@ -61,6 +62,7 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
     const [requirementsModalOpen, setRequirementsModalOpen] = useState(false)
     const isEditMode = !!product
     const selectedCut = Form.useWatch('cut', form)
+    const selectedCategory = Form.useWatch('category', form)
 
     // State to track custom options for each field
     const [customColors, setCustomColors] = useState<string[]>([])
@@ -71,6 +73,8 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
     const [customGrades, setCustomGrades] = useState<string[]>([])
     const [customMaterials, setCustomMaterials] = useState<string[]>([])
     const [customTags, setCustomTags] = useState<string[]>([])
+    const [customCategories, setCustomCategories] = useState<string[]>([])
+    const [customSubcategories, setCustomSubcategories] = useState<string[]>([])
 
     // State to track search values for Enter key handling
     const [searchValues, setSearchValues] = useState<Record<string, string>>({})
@@ -106,6 +110,16 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                 const shapeValue = (product as any).shape || product.metadata?.shape
                 if (shapeValue && !SHAPE_OPTIONS.includes(shapeValue)) {
                     setCustomShapes([shapeValue])
+                }
+                // Handle category and subcategory
+                if (product.category && !getCategories().includes(product.category)) {
+                    setCustomCategories([product.category])
+                }
+                if (product.category && product.subcategory) {
+                    const subcategories = getSubcategories(product.category)
+                    if (!subcategories.includes(product.subcategory)) {
+                        setCustomSubcategories([product.subcategory])
+                    }
                 }
                 // Handle materials and tags
                 if (product.materials && Array.isArray(product.materials)) {
@@ -158,6 +172,8 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
             setCustomGrades([])
             setCustomMaterials([])
             setCustomTags([])
+            setCustomCategories([])
+            setCustomSubcategories([])
             setSearchValues({})
         }
     }, [open, form, product])
@@ -218,6 +234,8 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
         setCustomGrades([])
         setCustomMaterials([])
         setCustomTags([])
+        setCustomCategories([])
+        setCustomSubcategories([])
         setSearchValues({})
         onCancel()
     }
@@ -393,7 +411,31 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             label="Category"
                             style={{ flex: 1 }}
                         >
-                            <Input placeholder="e.g., jewelry, stones" />
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder="Select or type category (press Enter)"
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={[...getCategories(), ...customCategories].map(cat => ({ label: cat, value: cat }))}
+                                onSearch={(value) => handleSearch('category', value)}
+                                onSelect={(value) => {
+                                    if (value && !getCategories().includes(value) && !customCategories.includes(value)) {
+                                        setCustomCategories([...customCategories, value])
+                                    }
+                                    setSearchValues({ ...searchValues, category: '' })
+                                }}
+                                onKeyDown={(e) => handleKeyDown(e, 'category', setCustomCategories, customCategories, getCategories())}
+                                allowClear
+                                notFoundContent={null}
+                                onChange={(value) => {
+                                    // Clear subcategory and custom subcategories when category changes
+                                    form.setFieldValue('subcategory', undefined)
+                                    setCustomSubcategories([])
+                                }}
+                            />
                         </Form.Item>
 
                         <Form.Item
@@ -401,7 +443,34 @@ export function AddProductModal({ open, onCancel, onSuccess, product }: AddProdu
                             label="Subcategory"
                             style={{ flex: 1 }}
                         >
-                            <Input placeholder="e.g., rings, necklaces" />
+                            <Select
+                                showSearch
+                                size="small"
+                                placeholder={selectedCategory ? "Select or type subcategory (press Enter)" : "Select category first"}
+                                optionFilterProp="label"
+                                filterOption={(input, option) =>
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                }
+                                options={selectedCategory 
+                                    ? [...getSubcategories(selectedCategory), ...customSubcategories].map(subcat => ({ label: subcat, value: subcat }))
+                                    : []
+                                }
+                                onSearch={(value) => handleSearch('subcategory', value)}
+                                onSelect={(value) => {
+                                    if (selectedCategory && value && !getSubcategories(selectedCategory).includes(value) && !customSubcategories.includes(value)) {
+                                        setCustomSubcategories([...customSubcategories, value])
+                                    }
+                                    setSearchValues({ ...searchValues, subcategory: '' })
+                                }}
+                                onKeyDown={(e) => {
+                                    if (selectedCategory) {
+                                        handleKeyDown(e, 'subcategory', setCustomSubcategories, customSubcategories, getSubcategories(selectedCategory))
+                                    }
+                                }}
+                                disabled={!selectedCategory}
+                                allowClear
+                                notFoundContent={null}
+                            />
                         </Form.Item>
                     </div>
                 </div>

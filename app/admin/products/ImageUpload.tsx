@@ -1,8 +1,8 @@
 'use client'
 
-import { LinkOutlined, PlusOutlined } from '@ant-design/icons'
+import { CheckOutlined, LinkOutlined, PlusOutlined, RotateLeftOutlined, RotateRightOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons'
 import type { UploadFile } from 'antd'
-import { Button, Modal, Upload, message } from 'antd'
+import { Button, Modal, Slider, Space, Upload, message } from 'antd'
 import type { RcFile } from 'antd/es/upload'
 import NextImage from 'next/image'
 import {
@@ -96,6 +96,93 @@ const fileToDataUrl = (file: File): Promise<string> =>
         reader.readAsDataURL(file)
     })
 
+// Create image element from URL
+const createImage = (url: string): Promise<HTMLImageElement> =>
+    new Promise((resolve, reject) => {
+        const image = new Image()
+        image.crossOrigin = 'anonymous'
+        image.addEventListener('load', () => resolve(image))
+        image.addEventListener('error', (error) => reject(error))
+        image.src = url
+    })
+
+// Crop image using canvas (native browser API)
+const cropImage = async (
+    imageSrc: string,
+    cropArea: { x: number; y: number; width: number; height: number },
+    rotation: number = 0
+): Promise<string> => {
+    const image = await createImage(imageSrc)
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+        throw new Error('Could not get canvas context')
+    }
+
+    // Set canvas size to crop area
+    canvas.width = cropArea.width
+    canvas.height = cropArea.height
+
+    // Handle rotation
+    if (rotation !== 0) {
+        const maxSize = Math.max(image.width, image.height)
+        const tempCanvas = document.createElement('canvas')
+        const tempCtx = tempCanvas.getContext('2d')
+        if (!tempCtx) throw new Error('Could not get temp canvas context')
+
+        tempCanvas.width = maxSize
+        tempCanvas.height = maxSize
+
+        tempCtx.translate(maxSize / 2, maxSize / 2)
+        tempCtx.rotate((rotation * Math.PI) / 180)
+        tempCtx.drawImage(image, -image.width / 2, -image.height / 2)
+
+        // Draw cropped area from rotated image
+        ctx.drawImage(
+            tempCanvas,
+            cropArea.x,
+            cropArea.y,
+            cropArea.width,
+            cropArea.height,
+            0,
+            0,
+            cropArea.width,
+            cropArea.height
+        )
+    } else {
+        // Draw cropped area directly
+        ctx.drawImage(
+            image,
+            cropArea.x,
+            cropArea.y,
+            cropArea.width,
+            cropArea.height,
+            0,
+            0,
+            cropArea.width,
+            cropArea.height
+        )
+    }
+
+    return new Promise((resolve) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    resolve('')
+                    return
+                }
+                const reader = new FileReader()
+                reader.onload = () => resolve(reader.result as string)
+                reader.onerror = () => resolve('')
+                reader.readAsDataURL(blob)
+            },
+            'image/jpeg',
+            0.92
+        )
+    })
+}
+
 export function ImageUpload({ value, onChange }: ImageUploadProps) {
     const [fileList, setFileList] = useState<MediaUploadFile[]>([])
     const [isDragging, setIsDragging] = useState(false)
@@ -104,6 +191,21 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
     const [previewUrl, setPreviewUrl] = useState('')
     const [previewIsVideo, setPreviewIsVideo] = useState(false)
     const [previewEmbedUrl, setPreviewEmbedUrl] = useState<string | null>(null)
+
+    // Crop modal state
+    const [cropModalVisible, setCropModalVisible] = useState(false)
+    const [imageToCrop, setImageToCrop] = useState<string>('')
+    const [cropFileName, setCropFileName] = useState<string>('')
+    const [cropArea, setCropArea] = useState({ x: 0, y: 0, width: 200, height: 200 })
+    const [imageSize, setImageSize] = useState({ width: 0, height: 0 })
+    const [zoom, setZoom] = useState(1)
+    const [rotation, setRotation] = useState(0)
+    const [isCropping, setIsCropping] = useState(false)
+    const [isDraggingCrop, setIsDraggingCrop] = useState(false)
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+    const pendingImageFile = useRef<File | null>(null)
+    const imageContainerRef = useRef<HTMLDivElement | null>(null)
+    const cropBoxRef = useRef<HTMLDivElement | null>(null)
 
     const containerRef = useRef<HTMLDivElement | null>(null)
     const fileListRef = useRef<MediaUploadFile[]>([])
@@ -156,6 +258,7 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         let videoCount = currentList.filter(item => item.isVideo).length
 
         const additions: MediaUploadFile[] = []
+        const imagesToCrop: File[] = []
 
         for (const file of files) {
             const isVideoFile = file.type.startsWith('video/')
@@ -184,46 +287,87 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
                 continue
             }
 
-            let dataUrl: string
-            try {
-                dataUrl = await fileToDataUrl(file)
-            } catch (err) {
-                console.error('Failed to read file', err)
-                message.error(`Failed to read ${file.name}`)
-                continue
-            }
-
-            additions.push({
-                uid: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-                name: file.name,
-                status: 'done',
-                url: dataUrl,
-                thumbUrl: isVideoFile ? VIDEO_PLACEHOLDER : dataUrl,
-                type: file.type,
-                isVideo: isVideoFile,
-                originFileObj: file,
-            })
-
-            if (isVideoFile) {
-                videoCount += 1
-            } else {
+            // For images, open crop modal. For videos, add directly.
+            if (isImageFile) {
+                imagesToCrop.push(file)
                 imageCount += 1
+            } else {
+                // Handle videos directly
+                let dataUrl: string
+                try {
+                    dataUrl = await fileToDataUrl(file)
+                } catch (err) {
+                    console.error('Failed to read file', err)
+                    message.error(`Failed to read ${file.name}`)
+                    continue
+                }
+
+                additions.push({
+                    uid: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                    name: file.name,
+                    status: 'done',
+                    url: dataUrl,
+                    thumbUrl: VIDEO_PLACEHOLDER,
+                    type: file.type,
+                    isVideo: true,
+                    originFileObj: file as RcFile,
+                })
+                videoCount += 1
             }
         }
 
-        if (!additions.length) return
+        // Process first image for cropping
+        if (imagesToCrop.length > 0) {
+            const firstImage = imagesToCrop[0]
+            try {
+                const imageUrl = await fileToDataUrl(firstImage)
+                pendingImageFile.current = firstImage
+                setCropFileName(firstImage.name)
+                setImageToCrop(imageUrl)
 
-        const nextList = [...currentList, ...additions]
-        setFileList(nextList)
-        fileListRef.current = nextList
-        emitChange(nextList)
+                // Load image to get dimensions
+                const img = await createImage(imageUrl)
+                const containerWidth = 600
+                const containerHeight = 400
+                const imgAspect = img.width / img.height
+                const containerAspect = containerWidth / containerHeight
 
-        const addedImages = additions.filter(item => !item.isVideo).length
-        const addedVideos = additions.filter(item => item.isVideo).length
-        const parts: string[] = []
-        if (addedImages) parts.push(`${addedImages} image${addedImages > 1 ? 's' : ''}`)
-        if (addedVideos) parts.push(`${addedVideos} video${addedVideos > 1 ? 's' : ''}`)
-        message.success(`Added ${parts.join(' and ')}`)
+                let displayWidth = containerWidth
+                let displayHeight = containerHeight
+
+                if (imgAspect > containerAspect) {
+                    displayHeight = containerWidth / imgAspect
+                } else {
+                    displayWidth = containerHeight * imgAspect
+                }
+
+                setImageSize({ width: displayWidth, height: displayHeight })
+
+                // Initialize crop area (center, 200x200 or smaller)
+                const cropSize = Math.min(200, displayWidth * 0.8, displayHeight * 0.8)
+                setCropArea({
+                    x: (displayWidth - cropSize) / 2,
+                    y: (displayHeight - cropSize) / 2,
+                    width: cropSize,
+                    height: cropSize,
+                })
+                setZoom(1)
+                setRotation(0)
+                setCropModalVisible(true)
+            } catch (err) {
+                console.error('Failed to read image', err)
+                message.error(`Failed to read ${firstImage.name}`)
+            }
+        }
+
+        // Add videos immediately if any
+        if (additions.length > 0) {
+            const nextList = [...currentList, ...additions]
+            setFileList(nextList)
+            fileListRef.current = nextList
+            emitChange(nextList)
+            message.success(`Added ${additions.length} video${additions.length > 1 ? 's' : ''}`)
+        }
     }, [emitChange])
 
     const handleBeforeUpload = useCallback((file: RcFile) => {
@@ -339,6 +483,145 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
         })
         return false
     }, [emitChange])
+
+    // Crop handlers
+    const handleCropMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault()
+        setIsDraggingCrop(true)
+        setDragStart({ x: e.clientX, y: e.clientY })
+    }, [])
+
+    const handleCropMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!isDraggingCrop || !imageContainerRef.current) return
+
+        const deltaX = e.clientX - dragStart.x
+        const deltaY = e.clientY - dragStart.y
+
+        setCropArea(prev => ({
+            ...prev,
+            x: Math.max(0, Math.min(imageSize.width - prev.width, prev.x + deltaX)),
+            y: Math.max(0, Math.min(imageSize.height - prev.height, prev.y + deltaY)),
+        }))
+        setDragStart({ x: e.clientX, y: e.clientY })
+    }, [isDraggingCrop, dragStart, imageSize])
+
+    const handleCropMouseUp = useCallback(() => {
+        setIsDraggingCrop(false)
+    }, [])
+
+    const handleCropResize = useCallback((e: React.MouseEvent, corner: 'nw' | 'ne' | 'sw' | 'se') => {
+        e.stopPropagation()
+        const startX = e.clientX
+        const startY = e.clientY
+        const startCrop = { ...cropArea }
+
+        const onMouseMove = (moveEvent: MouseEvent) => {
+            const deltaX = moveEvent.clientX - startX
+            const deltaY = moveEvent.clientY - startY
+
+            let newCrop = { ...startCrop }
+            const minSize = 50
+
+            if (corner === 'se') {
+                newCrop.width = Math.max(minSize, Math.min(imageSize.width - newCrop.x, startCrop.width + deltaX))
+                newCrop.height = Math.max(minSize, Math.min(imageSize.height - newCrop.y, startCrop.height + deltaY))
+            } else if (corner === 'sw') {
+                newCrop.x = Math.max(0, Math.min(startCrop.x + deltaX, startCrop.x + startCrop.width - minSize))
+                newCrop.width = startCrop.x + startCrop.width - newCrop.x
+                newCrop.height = Math.max(minSize, Math.min(imageSize.height - newCrop.y, startCrop.height + deltaY))
+            } else if (corner === 'ne') {
+                newCrop.y = Math.max(0, Math.min(startCrop.y + deltaY, startCrop.y + startCrop.height - minSize))
+                newCrop.width = Math.max(minSize, Math.min(imageSize.width - newCrop.x, startCrop.width + deltaX))
+                newCrop.height = startCrop.y + startCrop.height - newCrop.y
+            } else if (corner === 'nw') {
+                newCrop.x = Math.max(0, Math.min(startCrop.x + deltaX, startCrop.x + startCrop.width - minSize))
+                newCrop.y = Math.max(0, Math.min(startCrop.y + deltaY, startCrop.y + startCrop.height - minSize))
+                newCrop.width = startCrop.x + startCrop.width - newCrop.x
+                newCrop.height = startCrop.y + startCrop.height - newCrop.y
+            }
+
+            setCropArea(newCrop)
+        }
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove)
+            document.removeEventListener('mouseup', onMouseUp)
+        }
+
+        document.addEventListener('mousemove', onMouseMove)
+        document.addEventListener('mouseup', onMouseUp)
+    }, [cropArea, imageSize])
+
+    const handleCropConfirm = useCallback(async () => {
+        if (!imageToCrop || !pendingImageFile.current) return
+
+        setIsCropping(true)
+        try {
+            // Calculate actual crop coordinates based on original image dimensions
+            const img = await createImage(imageToCrop)
+            const scaleX = img.width / imageSize.width
+            const scaleY = img.height / imageSize.height
+
+            const actualCropArea = {
+                x: cropArea.x * scaleX,
+                y: cropArea.y * scaleY,
+                width: cropArea.width * scaleX,
+                height: cropArea.height * scaleY,
+            }
+
+            const croppedImageUrl = await cropImage(imageToCrop, actualCropArea, rotation)
+
+            if (!croppedImageUrl) {
+                message.error('Failed to crop image')
+                setIsCropping(false)
+                return
+            }
+
+            const currentList = fileListRef.current
+            const newFile: MediaUploadFile = {
+                uid: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                name: cropFileName,
+                status: 'done',
+                url: croppedImageUrl,
+                thumbUrl: croppedImageUrl,
+                type: 'image/jpeg',
+                isVideo: false,
+                originFileObj: pendingImageFile.current as RcFile,
+            }
+
+            const nextList = [...currentList, newFile]
+            setFileList(nextList)
+            fileListRef.current = nextList
+            emitChange(nextList)
+
+            setCropModalVisible(false)
+            setImageToCrop('')
+            setCropFileName('')
+            setCropArea({ x: 0, y: 0, width: 200, height: 200 })
+            setImageSize({ width: 0, height: 0 })
+            setZoom(1)
+            setRotation(0)
+            pendingImageFile.current = null
+
+            message.success('Image cropped and added successfully')
+        } catch (error) {
+            console.error('Crop error:', error)
+            message.error('Failed to crop image')
+        } finally {
+            setIsCropping(false)
+        }
+    }, [imageToCrop, cropArea, rotation, cropFileName, imageSize, emitChange])
+
+    const handleCropCancel = useCallback(() => {
+        setCropModalVisible(false)
+        setImageToCrop('')
+        setCropFileName('')
+        setCropArea({ x: 0, y: 0, width: 200, height: 200 })
+        setImageSize({ width: 0, height: 0 })
+        setZoom(1)
+        setRotation(0)
+        pendingImageFile.current = null
+    }, [])
 
     const handlePreview = useCallback((file: UploadFile) => {
         const mediaFile = file as MediaUploadFile
@@ -483,6 +766,174 @@ export function ImageUpload({ value, onChange }: ImageUploadProps) {
                         style={{ width: '100%', height: 'auto', borderRadius: 8 }}
                     />
                 )}
+            </Modal>
+
+            {/* Crop Modal */}
+            <Modal
+                open={cropModalVisible}
+                title={`Crop Image: ${cropFileName}`}
+                onCancel={handleCropCancel}
+                footer={[
+                    <Button key="cancel" onClick={handleCropCancel}>
+                        Cancel
+                    </Button>,
+                    <Button
+                        key="confirm"
+                        type="primary"
+                        icon={<CheckOutlined />}
+                        loading={isCropping}
+                        onClick={handleCropConfirm}
+                    >
+                        Confirm Crop
+                    </Button>,
+                ]}
+                centered
+                width={700}
+                destroyOnClose
+            >
+                <div style={{ marginBottom: 16 }}>
+                    <div
+                        ref={imageContainerRef}
+                        style={{
+                            position: 'relative',
+                            width: '100%',
+                            height: 400,
+                            background: '#f0f0f0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                            borderRadius: 8,
+                            marginBottom: 16,
+                        }}
+                        onMouseMove={handleCropMouseMove}
+                        onMouseUp={handleCropMouseUp}
+                        onMouseLeave={handleCropMouseUp}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={imageToCrop}
+                            alt="Crop preview"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                transform: `scale(${zoom}) rotate(${rotation}deg)`,
+                                transition: isDraggingCrop ? 'none' : 'transform 0.1s',
+                            }}
+                        />
+                        {/* Crop overlay */}
+                        <div
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0, 0, 0, 0.5)',
+                                clipPath: `polygon(
+                                    0% 0%,
+                                    0% 100%,
+                                    ${(cropArea.x / imageSize.width) * 100}% 100%,
+                                    ${(cropArea.x / imageSize.width) * 100}% ${(cropArea.y / imageSize.height) * 100}%,
+                                    ${((cropArea.x + cropArea.width) / imageSize.width) * 100}% ${(cropArea.y / imageSize.height) * 100}%,
+                                    ${((cropArea.x + cropArea.width) / imageSize.width) * 100}% ${((cropArea.y + cropArea.height) / imageSize.height) * 100}%,
+                                    ${(cropArea.x / imageSize.width) * 100}% ${((cropArea.y + cropArea.height) / imageSize.height) * 100}%,
+                                    ${(cropArea.x / imageSize.width) * 100}% 100%,
+                                    100% 100%,
+                                    100% 0%
+                                )`,
+                            }}
+                        />
+                        {/* Crop box */}
+                        {imageSize.width > 0 && (
+                            <div
+                                ref={cropBoxRef}
+                                style={{
+                                    position: 'absolute',
+                                    left: `${(cropArea.x / imageSize.width) * 100}%`,
+                                    top: `${(cropArea.y / imageSize.height) * 100}%`,
+                                    width: `${(cropArea.width / imageSize.width) * 100}%`,
+                                    height: `${(cropArea.height / imageSize.height) * 100}%`,
+                                    border: '2px solid #1890ff',
+                                    cursor: isDraggingCrop ? 'grabbing' : 'grab',
+                                    boxShadow: '0 0 0 2px rgba(24, 144, 255, 0.2)',
+                                }}
+                                onMouseDown={handleCropMouseDown}
+                            >
+                                {/* Resize handles */}
+                                {['nw', 'ne', 'sw', 'se'].map((corner) => (
+                                    <div
+                                        key={corner}
+                                        style={{
+                                            position: 'absolute',
+                                            width: 12,
+                                            height: 12,
+                                            background: '#1890ff',
+                                            border: '2px solid #fff',
+                                            borderRadius: '50%',
+                                            cursor: `${corner}-resize`,
+                                            [corner.includes('n') ? 'top' : 'bottom']: -6,
+                                            [corner.includes('w') ? 'left' : 'right']: -6,
+                                        }}
+                                        onMouseDown={(e) => {
+                                            e.stopPropagation()
+                                            handleCropResize(e, corner as 'nw' | 'ne' | 'sw' | 'se')
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Controls */}
+                    <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                        <div>
+                            <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
+                                Zoom: {Math.round(zoom * 100)}%
+                            </div>
+                            <Slider
+                                min={0.5}
+                                max={3}
+                                step={0.1}
+                                value={zoom}
+                                onChange={setZoom}
+                                marks={{
+                                    0.5: '50%',
+                                    1: '100%',
+                                    2: '200%',
+                                    3: '300%',
+                                }}
+                            />
+                        </div>
+
+                        <Space>
+                            <Button
+                                icon={<RotateLeftOutlined />}
+                                onClick={() => setRotation((prev) => (prev - 90) % 360)}
+                            >
+                                Rotate Left
+                            </Button>
+                            <Button
+                                icon={<RotateRightOutlined />}
+                                onClick={() => setRotation((prev) => (prev + 90) % 360)}
+                            >
+                                Rotate Right
+                            </Button>
+                            <Button
+                                icon={<ZoomOutOutlined />}
+                                onClick={() => setZoom((prev) => Math.max(0.5, prev - 0.1))}
+                            >
+                                Zoom Out
+                            </Button>
+                            <Button
+                                icon={<ZoomInOutlined />}
+                                onClick={() => setZoom((prev) => Math.min(3, prev + 0.1))}
+                            >
+                                Zoom In
+                            </Button>
+                        </Space>
+                    </Space>
+                </div>
             </Modal>
         </div>
     )
